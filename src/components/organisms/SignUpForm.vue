@@ -111,11 +111,20 @@ const handleGoogleSignIn = async () => {
     const API_URL = import.meta.env.VITE_API_URL || 'https://71yru8o4n5.execute-api.ap-northeast-1.amazonaws.com/Prod';
     const response = await axios.get(`${API_URL}/auth/google`);
 
-    alert(JSON.stringify(response))
-    
     if (response.data && response.data.redirectUrl) {
-      // Redirect the browser to Google login
-      window.location.href = response.data.redirectUrl;
+      const urlString = response.data.redirectUrl;
+ 
+      
+      // Optional: Extract and log the redirect URI for debugging
+      const url = new URL(urlString);
+      const code = url.searchParams.get('code');
+      alert(code)
+      const redirectUri = url.searchParams.get('redirect_uri');
+      const decodedRedirectUri = redirectUri ? decodeURIComponent(redirectUri) : null;
+      alert(decodedRedirectUri);
+      
+      // Redirect to Google OAuth
+      window.location.href = urlString;
     }
   } catch (error) {
     console.error('Error initiating Google login:', error);

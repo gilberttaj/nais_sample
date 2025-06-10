@@ -19,16 +19,18 @@ onMounted(async () => {
   if (code) {
     try {
       // Call your Lambda endpoint to exchange code for tokens
-      const response = await axios.get(`https://71yru8o4n5.execute-api.ap-northeast-1.amazonaws.com/Prod/auth/google/callback?code=${code}`);
+      const response = await axios.get(`http://localhost:5173/auth/google/callback?code=${code}`);
       
       if (response.data && response.data.access_token) {
         // Store tokens in localStorage or your auth store
         localStorage.setItem('accessToken', response.data.access_token);
         localStorage.setItem('idToken', response.data.id_token);
         localStorage.setItem('refreshToken', response.data.refresh_token);
+
+        console.log('checking response...', response)
         
-        // Redirect to authenticated area of your app
-        router.push('/dashboard'); // or wherever you want users to go after login
+        // Redirect to the home page (which can serve as a dashboard)
+        router.push('/'); // Redirecting to home page instead of non-existent dashboard
       } else {
         // Handle error case
         console.error('Invalid token response', response.data);
