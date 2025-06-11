@@ -1,12 +1,10 @@
 <template>
   <button 
     :class="[
-      'transition duration-200 flex items-center justify-center',
-      variant === 'primary' ? 'btn-primary' : '',
-      variant === 'outline' ? 'border border-primary text-primary hover:bg-primary hover:text-white font-semibold py-2 px-4 rounded-md' : '',
-      variant === 'text' ? 'text-primary hover:text-primary-dark font-semibold' : '',
-      fullWidth ? 'w-full' : '',
-      disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+      'btn',
+      `btn-${variant}`,
+      fullWidth ? 'btn-full' : '',
+      disabled ? 'btn-disabled' : ''
     ]"
     :disabled="disabled"
     @click="$emit('click')"
@@ -34,3 +32,29 @@ defineProps({
 
 defineEmits(['click']);
 </script>
+
+<style scoped lang="postcss">
+.btn {
+  @apply transition duration-200 flex items-center justify-center;
+}
+
+.btn-primary {
+  @apply bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-md;
+}
+
+.btn-outline {
+  @apply border border-primary text-primary hover:bg-primary hover:text-white font-semibold py-2 px-4 rounded-md;
+}
+
+.btn-text {
+  @apply text-primary hover:text-primary-dark font-semibold;
+}
+
+.btn-full {
+  @apply w-full;
+}
+
+.btn-disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+</style>
