@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen w-full flex">
+  <div class="signup-container">
     <!-- Left side - Form content -->
-    <div class="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div class="w-full max-w-md space-y-8">
+    <div class="form-container">
+      <div class="form-content">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Sign Up</h1>
-          <p class="mt-2 text-sm text-gray-600">
+          <h1 class="page-title">Sign Up</h1>
+          <p class="page-subtitle">
             Enter your email and password to sign up!
           </p>
         </div>
@@ -14,15 +14,53 @@
     </div>
     
     <!-- Right side - Brand/Logo -->
-    <div class="hidden lg:block lg:w-1/2 bg-[#1f2b5b]">
-      <div class="h-full flex flex-col items-center justify-center text-white">
-        <div class="text-6xl font-bold mb-4">NAIS</div>
-        <div class="text-4xl font-medium">メールマスター</div>
+    <div class="brand-container">
+      <div class="brand-content">
+        <div class="brand-title">NAIS</div>
+        <div class="brand-subtitle">メールマスター</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import SignUpForm from '../components/organisms/SignUpForm.vue'
+import SignUpForm from '@/components/organisms/SignUpForm.vue'
 </script>
+
+<style scoped lang="postcss">
+.signup-container {
+  @apply min-h-screen w-full flex;
+}
+
+.form-container {
+  @apply w-full lg:w-1/2 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8;
+}
+
+.form-content {
+  @apply w-full max-w-md space-y-8;
+}
+
+.page-title {
+  @apply text-3xl font-bold text-gray-900;
+}
+
+.page-subtitle {
+  @apply mt-2 text-sm text-gray-600;
+}
+
+.brand-container {
+  @apply hidden lg:block lg:w-1/2 bg-[#1f2b5b];
+}
+
+.brand-content {
+  @apply h-full flex flex-col items-center justify-center text-white;
+}
+
+.brand-title {
+  @apply text-6xl font-bold mb-4;
+}
+
+.brand-subtitle {
+  @apply text-4xl font-medium;
+}
+</style>

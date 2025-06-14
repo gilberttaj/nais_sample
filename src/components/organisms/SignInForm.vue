@@ -1,6 +1,10 @@
 <template>
   <div class="w-full max-w-md">
-    <GoogleSignInButton @click="handleGoogleSignIn" />
+    <GoogleSignInButton @click="handleGoogleSignIn" :disabled="isGoogleLoading">
+      <template #icon v-if="isGoogleLoading">
+        <LoadingSpinner :size="20" :dot-size="4" class="mr-2" />
+      </template>
+    </GoogleSignInButton>
     
     <Divider />
     
@@ -60,11 +64,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import InputField from '../atoms/InputField.vue'
-import Button from '../atoms/Button.vue'
-import Checkbox from '../atoms/Checkbox.vue'
-import GoogleSignInButton from '../molecules/GoogleSignInButton.vue'
-import Divider from '../molecules/Divider.vue'
+import InputField from '@/components/atoms/InputField.vue'
+import Button from '@/components/atoms/Button.vue'
+import Checkbox from '@/components/atoms/Checkbox.vue'
+import GoogleSignInButton from '@/components/molecules/GoogleSignInButton.vue'
+import Divider from '@/components/molecules/Divider.vue'
+import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
 import axios from 'axios'
 
 // Reactive state
@@ -74,11 +79,13 @@ const rememberMe = ref(false)
 const showPassword = ref(false)
 const emailError = ref('')
 const passwordError = ref('')
+const isGoogleLoading = ref(false)
 
 // Methods
 const handleGoogleSignIn = async () => {
   try {
-    const API_URL = import.meta.env.VITE_API_URL || 'https://71yru8o4n5.execute-api.ap-northeast-1.amazonaws.com/Prod';
+    isGoogleLoading.value = true;
+    const API_URL = import.meta.env.VITE_API_URL;
     const response = await axios.get(`${API_URL}/auth/google`);
     
     if (response.data && response.data.redirectUrl) {
@@ -87,7 +94,9 @@ const handleGoogleSignIn = async () => {
     }
   } catch (error) {
     console.error('Error initiating Google login:', error);
+    isGoogleLoading.value = false;
   }
+  // Note: We don't set isGoogleLoading to false on success because we're redirecting
 }
 
 const togglePassword = () => {
@@ -125,3 +134,9 @@ const handleSubmit = () => {
   }
 }
 </script>
+
+<style scoped>
+.mr-2 {
+  margin-right: 8px;
+}
+</style>

@@ -1,8 +1,8 @@
 <template>
-  <div class="flex items-center my-4">
-    <div class="flex-grow border-t border-gray-300"></div>
-    <div class="px-4 text-gray-500 text-sm">{{ text }}</div>
-    <div class="flex-grow border-t border-gray-300"></div>
+  <div class="divider-container">
+    <div class="divider-line"></div>
+    <div class="divider-text">{{ text }}</div>
+    <div class="divider-line"></div>
   </div>
 </template>
 
@@ -14,3 +14,17 @@ defineProps({
   }
 })
 </script>
+
+<style scoped lang="postcss">
+.divider-container {
+  @apply flex items-center my-4;
+}
+
+.divider-line {
+  @apply flex-grow border-t border-gray-300;
+}
+
+.divider-text {
+  @apply px-4 text-gray-500 text-sm;
+}
+</style>
