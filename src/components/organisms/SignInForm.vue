@@ -86,7 +86,7 @@ const handleGoogleSignIn = async () => {
   try {
     isGoogleLoading.value = true;
     const API_URL = import.meta.env.VITE_API_URL;
-    const response = await axios.get(`${API_URL}/auth/google`);
+    const response = await axios.get(`https://u7ipl8kq14.execute-api.ap-northeast-1.amazonaws.com/dev/auth/google`);
     
     if (response.data && response.data.redirectUrl) {
       // Redirect the browser to Google login
