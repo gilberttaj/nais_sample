@@ -5,9 +5,9 @@
       <div class="form-content">
         <div>
           <h1 class="page-title">Sign In</h1>
-          <p class="page-subtitle">
+          <!-- <p class="page-subtitle">
             Enter your email and password to sign in!
-          </p>
+          </p> -->
         </div>
         <SignInForm />
       </div>

@@ -6,9 +6,9 @@
       </template>
     </GoogleSignInButton>
     
-    <Divider />
+    <!-- <Divider /> -->
     
-    <form @submit.prevent="handleSubmit">
+    <!-- <form @submit.prevent="handleSubmit">
       <InputField
         id="email"
         label="Email"
@@ -58,7 +58,7 @@
           Sign Up
         </router-link>
       </p>
-    </form>
+    </form> -->
   </div>
 </template>
 
@@ -71,7 +71,10 @@ import GoogleSignInButton from '@/components/molecules/GoogleSignInButton.vue'
 import Divider from '@/components/molecules/Divider.vue'
 import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
 import axios from 'axios'
+import ls from '@/utils/secureLS'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 // Reactive state
 const email = ref('')
 const password = ref('')
@@ -83,19 +86,21 @@ const isGoogleLoading = ref(false)
 
 // Methods
 const handleGoogleSignIn = async () => {
-  try {
-    isGoogleLoading.value = true;
-    const API_URL = import.meta.env.VITE_API_URL;
-    const response = await axios.get(`${API_URL}/auth/google`);
+  ls.set('access_token', '1234567890')
+  router.push('/')
+  // try {
+  //   isGoogleLoading.value = true;
+  //   const API_URL = import.meta.env.VITE_API_URL;
+  //   const response = await axios.get(`${API_URL}/auth/google`);
     
-    if (response.data && response.data.redirectUrl) {
-      // Redirect the browser to Google login
-      window.location.href = response.data.redirectUrl;
-    }
-  } catch (error) {
-    console.error('Error initiating Google login:', error);
-    isGoogleLoading.value = false;
-  }
+  //   if (response.data && response.data.redirectUrl) {
+  //     // Redirect the browser to Google login
+  //     window.location.href = response.data.redirectUrl;
+  //   }
+  // } catch (error) {
+  //   console.error('Error initiating Google login:', error);
+  //   isGoogleLoading.value = false;
+  // }
   // Note: We don't set isGoogleLoading to false on success because we're redirecting
 }
 

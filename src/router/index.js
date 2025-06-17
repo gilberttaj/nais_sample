@@ -5,12 +5,26 @@ import HomePage from '../pages/HomePage.vue'
 import SignInPage from '../pages/SignInPage.vue'
 import SignUpPage from '../pages/SignUpPage.vue'
 import NotFoundPage from '../pages/NotFoundPage.vue'
+import ListPage from '../pages/ListPage.vue'
+import DetailPage from '../pages/DetailPage.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
     component: HomePage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/list',
+    name: 'List',
+    component: ListPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/detail',
+    name: 'Detail',
+    component: DetailPage,
     meta: { requiresAuth: true }
   },
   {
