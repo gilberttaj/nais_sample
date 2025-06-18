@@ -73,7 +73,8 @@ import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
 import axios from 'axios'
 import ls from '@/utils/secureLS'
 import { useRouter } from 'vue-router'
-import { Auth, API } from 'aws-amplify';
+import { getCurrentUser, fetchAuthSession, signInWithRedirect, signOut } from '@aws-amplify/auth';
+import { post as apiPost } from '@aws-amplify/api-rest';
 import { Hub } from 'aws-amplify/utils';
 
 const router = useRouter()
@@ -101,12 +102,12 @@ const isGoogleLoading = ref(false)
   onMounted(async () => {
     authStore.isLoading = true;
     try {
-      const cognitoUser = await Auth.currentAuthenticatedUser();
+      const cognitoUser = await getCurrentUser();
       authStore.user = cognitoUser; // This is the CognitoUser object
       authStore.isAuthenticated = true;
   
-      const session = await Auth.currentSession();
-      const idToken = session.getIdToken().getJwtToken();
+      const session = await fetchAuthSession();
+      const idToken = session.tokens?.idToken?.toString();
       authStore.idToken = idToken;
       console.log('Current ID Token on mount:', idToken);
       await callAuthLambda(idToken); // Call your lambda with the token
@@ -128,19 +129,31 @@ const isGoogleLoading = ref(false)
     authStore.authApiResponse = null;
     authStore.error = null;
     try {
-      const apiName = 'PrivateAuthAPI'; // Matches the name in Amplify.configure
-      const path = '/auth'; // Your Lambda's path
-      const myInit = {
-        body: { idToken: token }, // Send ID token in the body
+      const apiName = 'PrivateAuthAPI'; // This should match your amplifyconfiguration.json
+      const path = '/auth'; 
+      const myInit = { // This is the options object for the API call
+        body: { idToken: token }, 
         headers: {
           'Content-Type': 'application/json',
         },
       };
-      const response = await API.post(apiName, path, myInit);
-      console.log('Auth Lambda response:', response);
-      authStore.authApiResponse = response; // Or handle specific data from response
-      // Potentially update isAuthenticated based on this response if needed,
-      // though Cognito session already implies some level of auth.
+      // Use apiPost (imported) and pass myInit as options
+      const { body: responseBody, statusCode } = await apiPost({
+        apiName: apiName,
+        path: path,
+        options: myInit 
+      }).response;
+      const responseData = await responseBody.json();
+
+      console.log('Lambda response status:', statusCode);
+      console.log('Lambda response data:', responseData);
+      authStore.authApiResponse = responseData;
+
+      if (responseData.isDomainAllowed === false) {
+        authStore.error = responseData.message || 'Access denied by domain policy.';
+        // Optionally: await signOut(); 
+        // router.push('/login?error=domain_not_allowed');
+      }
     } catch (error) {
       console.error('Error calling auth Lambda:', error);
       authStore.error = error.response?.data?.error || error.message || 'Failed to call auth API.';
@@ -149,7 +162,6 @@ const isGoogleLoading = ref(false)
       if (error.response?.status === 403) {
           authStore.error = "Access Denied: Your email domain is not authorized.";
           // Optionally sign out if domain is not authorized
-          // await signOut(); 
       }
     } finally {
       authStore.isLoading = false;
@@ -171,9 +183,9 @@ const isGoogleLoading = ref(false)
         authStore.isLoading = false;
         authStore.error = null;
         // Get session to retrieve ID token
-        Auth.currentSession()
+        fetchAuthSession()
           .then(session => {
-            const idToken = session.getIdToken().getJwtToken();
+            const idToken = session.tokens?.idToken?.toString();
             authStore.idToken = idToken;
             console.log('ID Token:', idToken);
             // Call your custom Lambda for domain validation
@@ -210,13 +222,13 @@ const isGoogleLoading = ref(false)
 
 // Methods
 const handleGoogleSignIn = async () => {
-  alert('test')
+
 
   authStore.isLoading = true;
     authStore.error = null;
     try {
       // This will redirect to the Cognito Hosted UI for Google login
-      await Auth.federatedSignIn({ provider: 'Google' });
+      await signInWithRedirect({ provider: 'Google' });
     } catch (error) {
       console.error('Error signing in with Google:', error);
       authStore.error = error.message || 'Failed to initiate Google sign-in.';
