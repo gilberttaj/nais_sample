@@ -5,7 +5,7 @@
     "aws_user_pools_id": "ap-northeast-1_Di2vm2qjm",
     "aws_user_pools_web_client_id": "443r5ntohpimv3fao1i6p7sdkp",
     "oauth": {
-        "domain": "https://ap-northeast-1di2vm2qjm.auth.ap-northeast-1.amazoncognito.com",
+        "domain": "ap-northeast-1di2vm2qjm.auth.ap-northeast-1.amazoncognito.com",
         "scope": [
             "phone",
             "email",
