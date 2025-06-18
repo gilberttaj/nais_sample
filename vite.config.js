@@ -8,15 +8,32 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@atoms': path.resolve(__dirname, './src/components/atoms'),
-      '@molecules': path.resolve(__dirname, './src/components/molecules'),
-      '@organisms': path.resolve(__dirname, './src/components/organisms'),
-      '@templates': path.resolve(__dirname, './src/components/templates'),
-      '@pages': path.resolve(__dirname, './src/pages'),
-      '@assets': path.resolve(__dirname, './src/assets'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-      '@store': path.resolve(__dirname, './src/store'),
     }
+  },
+  server: {
+    proxy: {
+      // Proxy auth requests to local Express server during development
+      '/oauth2': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      },
+      '/login': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      },
+      '/logout': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      },
+      // Proxy API requests
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      }
+    }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets'
   }
 })
