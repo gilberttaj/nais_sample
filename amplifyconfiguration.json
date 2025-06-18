@@ -1,0 +1,30 @@
+{
+    "aws_project_region": "ap-northeast-1",
+    "aws_cognito_identity_pool_id": "",
+    "aws_cognito_region": "ap-northeast-1",
+    "aws_user_pools_id": "ap-northeast-1_Di2vm2qjm",
+    "aws_user_pools_web_client_id": "443r5ntohpimv3fao1i6p7sdkp",
+    "oauth": {
+        "domain": "https://ap-northeast-1di2vm2qjm.auth.ap-northeast-1.amazoncognito.com",
+        "scope": [
+            "phone",
+            "email",
+            "openid",
+            "profile",
+            "aws.cognito.signin.user.admin"
+        ],
+        "redirectSignIn": "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com/",
+        "redirectSignOut": "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com/logout/",
+        "responseType": "code"
+    },
+    "federationTarget": "COGNITO_USER_POOLS",
+    "API": {
+        "endpoints": [
+            {
+                "name": "PrivateAuthAPI",
+                "endpoint": "https://koc3wch4f0.execute-api.ap-northeast-1.amazonaws.com/Prod",
+                "region": "ap-northeast-1"
+            }
+        ]
+    }
+}
