@@ -1,132 +1,117 @@
-<!-- src/views/AuthValidation.vue -->
 <template>
-  <div class="auth-validation">
-    <div v-if="loading" class="loading-container">
-      <div class="spinner-container">
-        <LoadingSpinner :size="35" />
-        <div class="authenticating-text">Authenticating...</div>
-      </div>
-    </div>
-    <div v-else-if="error" class="error-container">
-      <h2>Authentication Error</h2>
-      <p>{{ errorMessage }}</p>
-      <button @click="goToLogin">Return to Login</button>
-    </div>
+  <div class="auth-validation-container">
+    <div class="spinner"></div>
+    <h1>Validating session...</h1>
+    <p>Please wait, we're securely signing you in.</p>
+    <p v-if="error" class="error-message">
+      An error occurred: {{ error }}. Redirecting to sign-in page...
+    </p>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
-import ls from '@/utils/secureLS'
+import { onMounted, onUnmounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { Hub } from 'aws-amplify/utils';
+import { getCurrentUser } from 'aws-amplify/auth';
 
+const router = useRouter();
+const error = ref(null);
 
-const router = useRouter()
-const loading = ref(true)
-const error = ref(false)
-const errorMessage = ref('')
-
-// Function to parse URL query parameters
-const getQueryParams = () => {
-  const params = new URLSearchParams(window.location.search)
-  const result = {}
-  for (const [key, value] of params.entries()) {
-    result[key] = value
+// This function will be called when the Hub detects an event
+const listener = async (data) => {
+  switch (data.payload.event) {
+    case 'signInWithRedirect':
+      // This event fires when the redirect process starts. We just wait.
+      console.log('AuthValidation: signInWithRedirect event started.');
+      break;
+    case 'signInWithRedirect_failure':
+      // Handle any failure during the redirect process
+      console.error('AuthValidation: signInWithRedirect failed:', data.payload.data);
+      error.value = 'Login failed. Please try again.';
+      setTimeout(() => router.push('/signin'), 3000);
+      break;
+    case 'signedIn':
+       // This is the old event name for v5, keeping it for robustness
+    case 'signIn':
+      // This event fires when the user is successfully signed in.
+      console.log('AuthValidation: User signed in successfully!');
+      // Now that we're signed in, redirect to the homepage.
+      router.push('/');
+      break;
   }
-  return result
-}
+};
 
-// Function to store auth tokens in localStorage
-const storeAuthTokens = (tokens) => {
-  ls.set('id_token', tokens.id_token)
-  ls.set('access_token', tokens.access_token)
-
-  if (tokens.refresh_token) {
-    ls.set('refresh_token', tokens.refresh_token)
-  }
-
-  ls.set('token_type', tokens.token_type)
-
-  // Store expiration time as timestamp
-  const expiresIn = parseInt(tokens.expires_in)
-  const expirationTime = Date.now() + expiresIn * 1000
-  ls.set('token_expiration', expirationTime.toString())
-}
-
-// Function to navigate to login page
-const goToLogin = () => {
-  ls.remove('id_token')
-  ls.remove('access_token')
-  ls.remove('refresh_token')
-  ls.remove('token_type')
-  ls.remove('token_expiration')
-  router.push('/signin')
-}
-
+// When the component is first created, start listening for auth events.
 onMounted(() => {
-  try {
-    const params = getQueryParams()
+  console.log('AuthValidation component mounted. Listening for auth events.');
+  // The 'auth' channel is where all Amplify Auth events are published.
+  const unsubscribe = Hub.listen('auth', listener);
 
-    if (params.status === 'error') {
-      error.value = true
-      errorMessage.value = params.message || 'Authentication failed'
-      loading.value = false
-      return
-    }
+  // Also, check if the user is already signed in, in case the event was missed.
+  // This can happen on a page refresh.
+  getCurrentUser()
+    .then(user => {
+      if (user) {
+        console.log('AuthValidation: User is already signed in, redirecting.');
+        router.push('/');
+      }
+    })
+    .catch(() => {
+      // No user signed in, which is expected on this page. Do nothing.
+      console.log('AuthValidation: No active user session found. Waiting for redirect to complete.');
+    });
 
-    if (params.status === 'success' && params.access_token) {
-      // Store tokens in localStorage
-      storeAuthTokens({
-        id_token: params.id_token,
-        access_token: params.access_token,
-        refresh_token: params.refresh_token,
-        expires_in: params.expires_in,
-        token_type: params.token_type
-      })
-
-      // Redirect to home page after successful authentication
-      router.push('/')
-    } else {
-      error.value = true
-      errorMessage.value = 'Invalid authentication response'
-      loading.value = false
-    }
-  } catch (err) {
-    console.error('Authentication validation error:', err)
-    error.value = true
-    errorMessage.value = 'Failed to process authentication response'
-    loading.value = false
-  }
-})
+  // When the component is destroyed, stop listening to prevent memory leaks.
+  onUnmounted(() => {
+    console.log('AuthValidation component unmounted. Unsubscribing from auth events.');
+    unsubscribe();
+  });
+});
 </script>
 
-<style scoped lang="postcss">
-.auth-validation {
-  @apply flex justify-center items-center min-h-screen text-center bg-gray-50;
+<style scoped>
+.auth-validation-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80vh;
+  text-align: center;
+  font-family: sans-serif;
 }
 
-.loading-container {
-  @apply flex flex-col items-center justify-center;
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #09f;
+  animation: spin 1s ease infinite;
+  margin-bottom: 20px;
 }
 
-.spinner-container {
-  @apply flex flex-col items-center justify-center p-8 rounded-lg bg-white shadow-md w-[250px] h-[150px] mb-4;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.authenticating-text {
-  @apply text-base text-gray-600 font-medium;
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.error-container {
-  @apply p-8 rounded-lg shadow-md bg-white max-w-md text-red-600;
+p {
+  color: #666;
 }
 
-button {
-  @apply mt-6 py-3 px-6 bg-blue-500 text-white border-none rounded-md cursor-pointer font-medium transition-colors;
-}
-
-button:hover {
-  @apply bg-blue-600;
+.error-message {
+  margin-top: 1rem;
+  color: #d9534f;
+  font-weight: bold;
 }
 </style>

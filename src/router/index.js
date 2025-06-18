@@ -38,9 +38,16 @@ const routes = [
     component: SignUpPage
   },
   {
-    path: '/auth/validation',
-    name: 'AuthValidation',
+    // CHANGED: Path updated to match your amplifyconfiguration.json redirectSignIn
+    path: '/auth/callback',
+    name: 'AuthCallback', // Name updated for clarity
     component: AuthValidation,
+  },
+  {
+    // NEW: Added route to handle the redirectSignOut from your amplifyconfiguration.json
+    path: '/auth/signout',
+    name: 'SignOut',
+    component: SignInPage, // Redirects to sign-in page after logout
   },
   {
     path: '/404',
@@ -65,8 +72,8 @@ router.beforeEach((to, from, next) => {
   
   // Case 1: User has NO token
   if (!accessToken) {
-    // Allow signin and signup
-    if (to.name === 'SignIn' || to.name === 'SignUp' || to.name === 'AuthValidation') {
+    // UPDATED: Added 'AuthCallback' and 'SignOut' to the list of allowed pages for unauthenticated users
+    if (to.name === 'SignIn' || to.name === 'SignUp' || to.name === 'AuthCallback' || to.name === 'SignOut') {
       console.log('Allowing access to auth page')
       next()
     }
@@ -81,8 +88,8 @@ router.beforeEach((to, from, next) => {
   }
   // Case 2: User HAS token
   else {
-    // Block signin and signup
-    if (to.name === 'SignIn' || to.name === 'SignUp' || to.name === 'AuthValidation') {
+    // UPDATED: Added 'AuthCallback' to the list of pages a logged-in user should be redirected away from
+    if (to.name === 'SignIn' || to.name === 'SignUp' || to.name === 'AuthCallback') {
       console.log('User has token, redirecting to home')
       next('/') 
     }
