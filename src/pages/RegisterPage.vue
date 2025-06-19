@@ -3,13 +3,39 @@
       <main class="flex-1 overflow-y-auto">
         <!-- Email Master Form (PDF送信マスタ) -->
         <div v-if="activeMenu === 'pdf-master'" class="px-6" >
-          <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
-            <!-- Blue Header -->
-            <div class="bg-blue-400 text-center text-white p-4 rounded-lg mb-6 xl:w-[95%]">
-              <h1 class="text-xl font-bold items-center text-white">一覧表示</h1>
-            </div>
+          <div class="pr-6 pb-4">
+            <h2 class="text-lg font-semibold text-gray-400">
+              このマスターは削除されています
+            </h2>
           </div>
 
+          <!-- User Info Section -->
+          <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
+            <div class="bg-blue-900 text-white p-4 rounded-lg mb-6 xl:w-[95%]">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-6">
+                  <div>
+                    <span class="text-sm opacity-75">ユーザー:</span>
+                    <span class="ml-2 font-medium">{{ currentUser.name }}</span>
+                  </div>
+                  <div>
+                    <span class="text-sm opacity-75">最終ログイン:</span>
+                    <span class="ml-2">{{ formatDateTime(currentUser.lastLogin) }}</span>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                  <div>
+                    <span class="text-sm opacity-75">実行ユーザー:</span>
+                    <span class="ml-2 font-medium">{{ currentUser.executionUser }}</span>
+                  </div>
+                  <div>
+                    <span class="text-sm opacity-75">実行時刻:</span>
+                    <span class="ml-2">{{ formatDateTime(new Date()) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Main Form -->
           <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
@@ -17,8 +43,8 @@
               dfdfd
             </div> -->
             <div class="rounded-2xl bg-white border-b border-gray-200 shadow-lg xl:w-[95%]">
-              <div class="py-6 mt-2">
-                <HomeList/>
+              <div class="p-6 mt-2">
+                <removeForm/>
               </div>
             </div>
           </div>
@@ -36,7 +62,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import HomeList from '@/components/organisms/HomeList.vue'
+import removeForm from '@/components/organisms/removeForm.vue'
 
 // Reactive data
 const loading = ref(false)

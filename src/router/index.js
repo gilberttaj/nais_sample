@@ -7,6 +7,12 @@ import SignUpPage from '../pages/SignUpPage.vue'
 import NotFoundPage from '../pages/NotFoundPage.vue'
 import ListPage from '../pages/ListPage.vue'
 import DetailPage from '../pages/DetailPage.vue'
+import RegisterPage from '../pages/RegisterPage.vue'
+import RegisterConfirmationPage from '../pages/RegisterConfirmationPage.vue'
+import RegisterCompletePage from '../pages/RegisterCompletePage.vue'
+import RegisterEditPage from '../pages/RegisterEditPage.vue'
+import RegisterEditConfirmationPage from '../pages/RegisterEditConfirmationPage.vue'
+import RegisterEditCompletePage from '../pages/RegisterEditCompletePage.vue'
 
 const routes = [
   {
@@ -22,9 +28,45 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/detail',
+    path: '/detail',///detail/:id
     name: 'Detail',
     component: DetailPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/register',
+    name: 'RegisterPage',
+    component: RegisterPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/register/confirmation',
+    name: 'RegisterConfirmationPage',
+    component: RegisterConfirmationPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/register/complete',
+    name: 'RegisterCompletePage',
+    component: RegisterCompletePage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/register/edit/:id',
+    name: 'RegisterEditPage',
+    component: RegisterEditPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/register/edit/confirmation',
+    name: 'RegisterEditConfirmationPage',
+    component: RegisterEditConfirmationPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/register/edit/complete',
+    name: 'RegisterEditCompletePage',
+    component: RegisterEditCompletePage,
     meta: { requiresAuth: true }
   },
   {
