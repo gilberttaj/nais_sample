@@ -73,9 +73,6 @@ import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
 import axios from 'axios'
 import ls from '@/utils/secureLS'
 import { useRouter } from 'vue-router'
-import { getCurrentUser, fetchAuthSession, signInWithRedirect, signOut } from '@aws-amplify/auth';
-import { post as apiPost } from '@aws-amplify/api-rest';
-import { Hub } from 'aws-amplify/utils';
 
 const router = useRouter()
 // Reactive state
@@ -102,18 +99,21 @@ const isGoogleLoading = ref(false)
   onMounted(async () => {
     authStore.isLoading = true;
     try {
-      const cognitoUser = await getCurrentUser();
-      authStore.user = cognitoUser; // This is the CognitoUser object
-      authStore.isAuthenticated = true;
-  
-      const session = await fetchAuthSession();
-      const idToken = session.tokens?.idToken?.toString();
-      authStore.idToken = idToken;
-      console.log('Current ID Token on mount:', idToken);
-      await callAuthLambda(idToken); // Call your lambda with the token
-  
+      // Check authentication status from server
+      const response = await axios.get('/auth/user', { 
+        withCredentials: true 
+      });
+      
+      if (response.data && response.data.isAuthenticated) {
+        authStore.user = response.data.user;
+        authStore.isAuthenticated = true;
+        authStore.idToken = 'cookie-based'; // Token is in HTTP-only cookie
+        
+        // Domain validation already happened server-side during callback
+        // No need to call Lambda here
+      }
     } catch (error) {
-      console.log('No authenticated user found on mount or error fetching session:', error);
+      console.log('User not authenticated or session expired');
       authStore.user = null;
       authStore.idToken = null;
       authStore.isAuthenticated = false;
@@ -121,135 +121,134 @@ const isGoogleLoading = ref(false)
     } finally {
       authStore.isLoading = false;
     }
+    
+    // Check for auth success/error in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const authResult = urlParams.get('auth');
+    const authError = urlParams.get('error');
+    const errorMessage = urlParams.get('message');
+    
+    if (authResult === 'success') {
+      // Authentication successful, refresh user data
+      try {
+        const response = await axios.get('/auth/user', { 
+          withCredentials: true 
+        });
+        if (response.data && response.data.isAuthenticated) {
+          authStore.user = response.data.user;
+          authStore.isAuthenticated = true;
+          authStore.idToken = 'cookie-based';
+        }
+      } catch (error) {
+        console.error('Error fetching user after auth success:', error);
+      }
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (authError) {
+      // Handle different error types
+      let displayError = 'Authentication failed';
+      
+      switch (authError) {
+        case 'domain_not_allowed':
+          displayError = errorMessage ? decodeURIComponent(errorMessage) : 'Access denied: Your email domain is not authorized';
+          break;
+        case 'oauth_error':
+          displayError = 'OAuth authentication error occurred';
+          break;
+        case 'missing_parameters':
+          displayError = 'Authentication request was incomplete';
+          break;
+        case 'invalid_state':
+          displayError = 'Authentication session expired or invalid';
+          break;
+        case 'token_exchange_failed':
+          displayError = 'Failed to complete authentication process';
+          break;
+        default:
+          displayError = `Authentication failed: ${authError}`;
+      }
+      
+      authStore.error = displayError;
+      authStore.isAuthenticated = false;
+      authStore.isLoading = false;
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   });
 
-
-  const callAuthLambda = async (token) => {
-    authStore.isLoading = true;
-    authStore.authApiResponse = null;
-    authStore.error = null;
-    try {
-      const apiName = 'PrivateAuthAPI'; // This should match your amplifyconfiguration.json
-      const path = '/auth'; 
-      const myInit = { // This is the options object for the API call
-        body: { idToken: token }, 
+const callAuthLambda = async (token) => {
+  authStore.isLoading = true;
+  authStore.authApiResponse = null;
+  authStore.error = null;
+  try {
+    // Call your custom Lambda using axios instead of Amplify API
+    const response = await axios.post('/api/auth', 
+      { idToken: token }, 
+      { 
+        withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
-        },
-      };
-      // Use apiPost (imported) and pass myInit as options
-      const { body: responseBody, statusCode } = await apiPost({
-        apiName: apiName,
-        path: path,
-        options: myInit 
-      }).response;
-      const responseData = await responseBody.json();
-
-      console.log('Lambda response status:', statusCode);
-      console.log('Lambda response data:', responseData);
-      authStore.authApiResponse = responseData;
-
-      if (responseData.isDomainAllowed === false) {
-        authStore.error = responseData.message || 'Access denied by domain policy.';
-        // Optionally: await signOut(); 
-        // router.push('/login?error=domain_not_allowed');
+        }
       }
-    } catch (error) {
-      console.error('Error calling auth Lambda:', error);
-      authStore.error = error.response?.data?.error || error.message || 'Failed to call auth API.';
-      authStore.authApiResponse = { error: authStore.error };
-       // If the lambda returns 403, you might want to sign the user out or show a specific message
-      if (error.response?.status === 403) {
-          authStore.error = "Access Denied: Your email domain is not authorized.";
-          // Optionally sign out if domain is not authorized
-      }
-    } finally {
-      authStore.isLoading = false;
-    }
-  };
+    );
 
-    // Hub listener for auth events (sign-in, sign-out)
-    Hub.listen('auth', ({ payload }) => {
-    const { event, data } = payload;
-    switch (event) {
-      case 'signInWithRedirect': // This event fires when redirect from Cognito Hosted UI starts
-        authStore.isLoading = true;
-        break;
-      case 'signIn': // This event fires after successful sign-in (if not using redirect for the final step)
-      case 'cognitoHostedUI': // This event fires after successful sign-in via Hosted UI
-        console.log('Hub: signIn or cognitoHostedUI event', data);
-        authStore.user = data; // data is the CognitoUser object
-        authStore.isAuthenticated = true;
-        authStore.isLoading = false;
-        authStore.error = null;
-        // Get session to retrieve ID token
-        fetchAuthSession()
-          .then(session => {
-            const idToken = session.tokens?.idToken?.toString();
-            authStore.idToken = idToken;
-            console.log('ID Token:', idToken);
-            // Call your custom Lambda for domain validation
-            callAuthLambda(idToken);
-          })
-          .catch(err => {
-            console.error('Error getting current session:', err);
-            authStore.error = 'Failed to get user session.';
-            authStore.isAuthenticated = false;
-            authStore.isLoading = false;
-          });
-        break;
-      case 'signOut':
-        console.log('Hub: signOut event');
-        authStore.user = null;
-        authStore.idToken = null;
-        authStore.isAuthenticated = false;
-        authStore.isLoading = false;
-        authStore.error = null;
-        authStore.authApiResponse = null;
-        break;
-      case 'signIn_failure':
-      case 'cognitoHostedUI_failure':
-        console.error('Hub: sign in failure event', data);
-        authStore.error = data?.message || 'Sign-in failed.';
-        authStore.isAuthenticated = false;
-        authStore.isLoading = false;
-        break;
-      default:
-        // console.log('Hub: other auth event', event, data);
-        break;
+    console.log('Lambda response:', response.data);
+    authStore.authApiResponse = response.data;
+
+    if (response.data.isDomainAllowed === false) {
+      authStore.error = response.data.message || 'Access denied by domain policy.';
+      // Optionally: logout user if domain not allowed
+      // await handleLogout();
     }
-  });
+  } catch (error) {
+    console.error('Error calling auth Lambda:', error);
+    authStore.error = error.response?.data?.error || error.message || 'Failed to call auth API.';
+    authStore.authApiResponse = { error: authStore.error };
+    
+    if (error.response?.status === 403) {
+      authStore.error = "Access Denied: Your email domain is not authorized.";
+      // Optionally sign out if domain is not authorized
+    }
+  } finally {
+    authStore.isLoading = false;
+  }
+};
+
+const handleLogout = async () => {
+  try {
+    await axios.post('/auth/logout', {}, { withCredentials: true });
+    
+    // Clear local auth state
+    authStore.user = null;
+    authStore.idToken = null;
+    authStore.isAuthenticated = false;
+    authStore.error = null;
+    authStore.authApiResponse = null;
+    
+    // Redirect to login page or refresh
+    router.push('/');
+  } catch (error) {
+    console.error('Error during logout:', error);
+  }
+};
 
 // Methods
 const handleGoogleSignIn = async () => {
-
-
-  authStore.isLoading = true;
+  try {
+    isGoogleLoading.value = true;
+    authStore.isLoading = true;
     authStore.error = null;
-    try {
-      // This will redirect to the Cognito Hosted UI for Google login
-      await signInWithRedirect({ provider: 'Google' });
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      authStore.error = error.message || 'Failed to initiate Google sign-in.';
-      authStore.isLoading = false;
-    }
-  // ls.set('access_token', '1234567890')
-  // router.push('/')
-  // try {
-  //   isGoogleLoading.value = true;
-  //   const API_URL = import.meta.env.VITE_API_URL;
-  //   const response = await axios.get(`${API_URL}/auth/google`);
     
-  //   if (response.data && response.data.redirectUrl) {
-  //     // Redirect the browser to Google login
-  //     window.location.href = response.data.redirectUrl;
-  //   }
-  // } catch (error) {
-  //   console.error('Error initiating Google login:', error);
-  //   isGoogleLoading.value = false;
-  // }
-  // Note: We don't set isGoogleLoading to false on success because we're redirecting
+    // Redirect to our server's OAuth login endpoint
+    window.location.href = '/auth/login';
+  } catch (error) {
+    console.error('Error initiating Google sign-in:', error);
+    authStore.error = error.message || 'Failed to initiate Google sign-in.';
+    authStore.isLoading = false;
+    isGoogleLoading.value = false;
+  }
 }
 
 const togglePassword = () => {
