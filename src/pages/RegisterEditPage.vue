@@ -2,7 +2,7 @@
         <!-- Page Content -->
       <main class="flex-1 overflow-y-auto">
         <!-- Email Master Form (PDF送信マスタ) -->
-        <div v-if="activeMenu === 'pdf-master'" class="px-6" >
+        <div v-if="activeMenu === 'email-master'" class="px-6" >
           <div class="pr-6 pb-4">
             <h2 class="text-lg font-semibold text-gray-400">
               このマスターは削除されています
@@ -67,7 +67,7 @@ import RegisterEdit from '@/components/organisms/RegisterEdit.vue'
 // Reactive data
 const loading = ref(false)
 const selectedEmails = ref([])
-const activeMenu = ref('pdf-master')
+const activeMenu = ref('email-master')
 const searchQuery = ref('')
 
 const currentUser = reactive({
@@ -118,11 +118,7 @@ const setActiveMenu = (menu) => {
 
 const getMenuTitle = (menu) => {
   const titles = {
-    'dashboard': 'ダッシュボード',
-    'pdf-master': '請求書PDF送信マスタ',
-    'email-settings': 'メール設定',
-    'user-management': 'ユーザー管理',
-    'system-settings': 'システム設定'
+    'email-master': 'メール宛先マスター',
   }
   return titles[menu] || 'ページ'
 }

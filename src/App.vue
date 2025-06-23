@@ -26,7 +26,7 @@ import { ref, reactive } from 'vue'
 import TopNavbar from './components/atoms/TopNavbar.vue'
 import SidebarMenu from './components/atoms/SideMenu.vue'
 
-const activeMenu = ref('pdf-master')
+const activeMenu = ref('email-master')
 const searchQuery = ref('')
 
 const currentUser = reactive({

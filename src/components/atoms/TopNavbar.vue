@@ -12,26 +12,27 @@
             class="w-full pl-4 pr-12 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             @keyup.enter="emitSearch"
           />
-          <button
+          <Button
             @click="emitSearch"
             class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition-colors"
           >
             <SearchIcon class="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
       <!-- User Actions -->
       <div class="flex items-center space-x-4">
-        <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+        <Button variant=text class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
           <BellIcon class="w-5 h-5" />
-        </button>
-        <button
+        </Button>
+        <Button
           @click="$emit('logout')"
-          class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+          variant="text"
+          class="text-sm text-blue-600 hover:text-blue-800 transition-colors bg-transparent"
         >
           ログアウト
-        </button>
+        </Button>
       </div>
     </div>
   </header>
@@ -39,6 +40,7 @@
 
 <script setup>
 import { SearchIcon, BellIcon } from 'lucide-vue-next'
+import Button from '../atoms/Button.vue'
 
 const props = defineProps({
   modelValue: String

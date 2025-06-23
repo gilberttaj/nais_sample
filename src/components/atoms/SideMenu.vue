@@ -9,10 +9,10 @@
     <div class="flex-1 p-4">
       <h2 class="text-sm font-medium text-gray-500 mb-4">Menu</h2>
       <nav class="space-y-2">
-        <a
+        <router-link
           v-for="item in menuItems"
           :key="item.key"
-          href="#"
+          :to="item.url"
           @click.prevent="setActive(item.key)"
           :class="[
             'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -23,7 +23,7 @@
         >
           <component :is="item.icon" class="w-5 h-5 mr-3" />
           {{ item.label }}
-        </a>
+        </router-link>
       </nav>
     </div>
 
@@ -51,6 +51,7 @@ import {
   SettingsIcon,
   UserIcon
 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   activeMenu: String,
@@ -59,11 +60,7 @@ const props = defineProps({
 const emits = defineEmits(['update:activeMenu'])
 
 const menuItems = [
-  { key: 'dashboard', label: 'Dashboard', icon: HomeIcon },
-  { key: 'pdf-master', label: '請求書PDF送信マスタ', icon: GridIcon },
-  { key: 'email-settings', label: 'メール設定', icon: MailIcon },
-  { key: 'user-management', label: 'ユーザー管理', icon: UsersIcon },
-  { key: 'system-settings', label: 'システム設定', icon: SettingsIcon }
+  { key: 'email-master', label: 'メール宛先マスター', icon: MailIcon, url: '/'},
 ]
 
 function setActive(key) {

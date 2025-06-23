@@ -1,191 +1,200 @@
 <template>
-  <div class="bg-gray-50">
-    <div class="mx-auto p-6 space-y-6">
-      <!-- Business Office Information Section -->
-      <div class="flex justify-between items-center">
-        <!-- Left Side -->
-        <div class="flex items-center space-x-3">
-          <span class="text-sm font-medium text-gray-700">事業所:</span>
-          <span class="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm font-medium">0020</span>
-          <span class="text-sm text-gray-900">公共事業部</span>
-        </div>
-
-        <!-- Right Side -->
-        <div class="flex items-center space-x-3">
-          <span class="text-sm font-medium text-gray-700">部署事業所情報:</span>
-          <span class="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm font-medium">8527</span>
-          <span class="text-sm text-gray-900">千葉県支店情報</span>
+  <div class="">
+    <div class="mx-auto px-6 pb-6 space-y-6">
+      <!-- Business Office Information -->
+      <div class="bg-white border border-gray-300 rounded-lg p-6">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div class="flex items-center space-x-3">
+            <span class="text-sm font-medium text-gray-600">事業所:</span>
+            <span class="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 font-medium px-2 py-1 rounded-md text-sm">0020</span>
+            <span class="text-sm text-gray-900">広域営業部</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="text-sm font-medium text-gray-600">請求書集約得意先:</span>
+            <span class="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 font-medium px-2 py-1 rounded-md text-sm">8527</span>
+            <span class="text-sm text-gray-900">千葉県酒類販売</span>
+          </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex space-x-4">
-        <button 
-          v-for="button in actionButtons" 
-          :key="button.id"
-          @click="handleAction(button.action)"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-        >
-          {{ button.label }}
-        </button>
+      <div class="bg-white">
+        <div class="grid grid-cols-5 gap-4 w-full">
+          <button
+            v-for="button in actionButtons"
+            :key="button.id"
+            @click="handleAction(button.action)"
+            class="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 w-full px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center justify-center"
+          >
+            <component :is="button.icon" class="w-4 h-4 mr-2" />
+            {{ button.label }}
+          </button>
+        </div>
       </div>
 
-      <!-- Main Output Configuration Table -->
-      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table class="w-full">
-          <thead>
-            <tr>
-              <th class="bg-[#d9ead3] px-4 pt-6 text-center mt-9 text-sm font-medium text-gray-900">
-                出力区分
-              </th>
-              <th class="bg-[#d9ead3] px-4 py-3 text-center text-sm font-medium text-gray-900">
-                請求合計表
-              </th>
-              <th class="bg-[#d9ead3] px-4 py-3 text-center text-sm font-medium text-gray-900">
-                品代金振替通知書
-              </th>
-              <th class="bg-[#d9ead3] px-4 py-3 text-center text-sm font-medium text-gray-900">
-                請求合計表
-              </th>
-              <th class="bg-[#d9ead3] px-4 py-3 text-center text-sm font-medium text-gray-900">
-                請求合計表
-              </th>
-              <th class="bg-[#d9ead3] px-4 py-3 text-center text-sm font-medium text-gray-900">
-                請求合計表
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="">
-              <td class="px-4 py-3 text-sm text-gray-900 bg-[#d9ead3]">
-                <!-- Empty cell for row header -->
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 text-center">
-                1:出力する
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 text-center">
-                0:出力しない
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 text-center">
-                1:出力する
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 text-center">
-                1:出力する
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 text-center">
-                1:出力する
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Output Configuration -->
+      <div class="bg-white border border-gray-300 rounded-lg">
+        <div class="overflow-x-auto rounded-lg">
+          <div class="flex">
+            <!-- Left side - 出力区分 -->
+            <div class="flex-shrink-0 w-32 bg-gray-50 border-r border-gray-200 flex items-center justify-center rounded-lg">
+              <span class="text-sm font-medium text-gray-700">出力区分</span>
+            </div>
+
+            <!-- Right side - Main table -->
+            <div class="flex-1">
+              <table class="w-full ">
+                <thead>
+                  <tr class="bg-gray-50 rounded-lg">
+                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      請求合計表
+                    </th>
+                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      品代金振替通知書
+                    </th>
+                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      請求明細書
+                    </th>
+                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      客先買入明細
+                    </th>
+                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+                      割戻金計算書
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 rounded-lg">
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">1:出力する</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">0:出力しない</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">1:出力する</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">1:出力する</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">1:出力する</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Two Column Status Section -->
+      <!-- Status Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Invoice Delivery -->
-        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div class="bg-[#d9ead3] px-4 py-3">
+        <div class="bg-white border border-gray-300 rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-sm font-medium text-gray-900">請求書送付</h3>
           </div>
-          <div class="px-4 py-3">
+          <div class="px-6 py-4">
             <span class="text-sm text-gray-900">1:不要</span>
           </div>
         </div>
 
-        <!-- Release Status -->
-        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div class="bg-[#d9ead3] px-4 py-3">
+        <div class="bg-white border border-gray-300 rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-sm font-medium text-gray-900">リリース状態</h3>
           </div>
-          <div class="px-4 py-3">
+          <div class="px-6 py-4">
             <span class="text-sm text-gray-900">1:テスト運用</span>
           </div>
         </div>
       </div>
 
-      <!-- Destination Management Table -->
-      <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-        <div class="max-w-full overflow-x-auto">
-            <div class="min-w-[1026px]">
-            <!-- table header start -->
-            <div class="grid grid-cols-11 px-5 py-3 bg-[#d9ead3]">
-                <div class="flex items-center col-span-2 ">
-                <p class="text-sm font-medium text-gray-700">有効区分</p>
-                </div>
-                <div class="flex items-center col-span-3">
-                <p class="text-sm font-medium text-gray-700">
-                    送付先先
-                </p>
-                </div>
-                <div class="flex items-center col-span-2">
-                <p class="text-sm font-medium text-gray-700">
-                    送付先先
-                </p>
-                </div>
-            </div>
-            <!-- table header end -->
-
-            <!-- table body start -->
-            <!-- table item -->
-            <div class="grid grid-cols-11 border-t border-gray-100 px-5 py-3.5">
-                <div class="flex items-center col-span-2">
-                <p class="text-gray-500 text-theme-sm">0:有効</p>
-                </div>
-                <div class="flex items-center col-span-3">
-                <p class="text-gray-500 text-theme-sm">
-                    aaa@nishuhan.co.jp
-                </p>
-                </div>
-                <div class="flex items-center col-span-2">
-                <p class="text-center text-gray-500 text-theme-sm">
-                        担当セールス
-                </p>
-                </div>
-            </div>
-
-            <!-- table item -->
-            <div class="grid grid-cols-11 border-t border-gray-100 px-5 py-3.5">
-                <div class="flex items-center col-span-2">
-                <p class="text-gray-500 text-theme-sm">1:無効(テスト運用)</p>
-                </div>
-                <div class="flex items-center col-span-3">
-                <p class="text-gray-500 text-theme-sm">
-                    xxx@nishuhan.co.jp
-                </p>
-                </div>
-                <div class="flex items-center col-span-2">
-                <p class="text-center text-gray-500 text-theme-sm">
-                    先方担当者
-                </p>
-                </div>
-            </div>
-
-            <!-- table item -->
-            <div class="grid grid-cols-11 border-t border-gray-100 px-5 py-3.5">
-                <div class="flex items-center col-span-2">
-                <p class="text-gray-500 text-theme-sm">2:無効(削除)</p>
-                </div>
-                <div class="flex items-center col-span-3">
-                <p class="text-gray-500 text-theme-sm">	zzz@nishuhan.co.jp</p>
-                </div>
-                <div class="flex items-center col-span-2">
-                <p class="text-center text-gray-500 text-theme-sm">
-                    2023年3月までの先方担当者
-                </p>
-                </div>
-            </div>
-            <!-- table body end -->
-            </div>
+      <!-- Destination Management -->
+      <div class="bg-white border border-gray-300 rounded-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  有効区分
+                </th>
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  送付先
+                </th>
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  役割
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr 
+                v-for="item in destinationData" 
+                :key="item.id" 
+                class="hover:bg-gray-50 transition-colors"
+              >
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span :class="getStatusBadgeClass(item.statusType)">
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-8 w-8">
+                      <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span class="text-sm font-medium text-blue-600">
+                          {{ item.email.charAt(0).toUpperCase() }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900">{{ item.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.role }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- Status Message -->
       <div 
         v-if="statusMessage" 
-        class="mt-4 p-3 rounded-md transition-all duration-300"
-        :class="statusClass"
+        :class="getStatusMessageClass()"
+        class="p-4 rounded-lg border transition-all duration-300"
       >
-        {{ statusMessage }}
+        <div class="flex items-center">
+          <AlertTriangleIcon class="w-5 h-5 mr-2" />
+          <span class="text-sm font-medium">{{ statusMessage }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <div 
+      v-if="dialogVisible" 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click="dialogVisible = false"
+    >
+      <div 
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        @click.stop
+      >
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-red-600 flex items-center">
+            <AlertTriangleIcon class="w-5 h-5 mr-2" />
+            削除の確認
+          </h3>
+          <p class="text-sm text-gray-600 mt-2">
+            以下の送付先を削除してもよろしいですか？この操作は取り消せません。
+          </p>
+        </div>
+        
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <button
+            @click="dialogVisible = false"
+            class="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            @click="confirmDelete"
+            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            削除する
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -193,101 +202,151 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { Search, Plus, Settings, Trash2, Edit, AlertTriangle } from 'lucide-vue-next'
 
-// Action buttons data
-const actionButtons = ref([
-  { id: 1, label: '検索-5', action: 'search5' },
-  { id: 2, label: '検索-6', action: 'search6' },
-  { id: 3, label: '追加-1', action: 'add1' },
-  { id: 4, label: '変更-3', action: 'modify3' },
-  { id: 5, label: '削除-2', action: 'delete2' }
-])
+// Icons mapping
+const SearchIcon = Search
+const PlusIcon = Plus
+const SettingsIcon = Settings
+const Trash2Icon = Trash2
+const EditIcon = Edit
+const AlertTriangleIcon = AlertTriangle
 
-// Destination data
-const destinationData = ref([
-  {
-    status: '0:有効',
-    destination1: 'aaa@nishuhan.co.jp',
-    destination2: '担当セールス'
-  },
-  {
-    status: '1:無効(テスト運用)',
-    destination1: 'xxx@nishuhan.co.jp',
-    destination2: '先方担当者'
-  },
-  {
-    status: '2:無効(削除)',
-    destination1: 'zzz@nishuhan.co.jp',
-    destination2: '2023年3月までの先方担当者'
-  }
-])
-
-// Status management
+// Reactive data
+const dialogVisible = ref(false)
+const selectedItem = ref(null)
 const statusMessage = ref('')
 const statusType = ref('info')
 
-// Computed properties
-const statusClass = computed(() => {
-  const baseClasses = 'text-sm font-medium'
-  switch (statusType.value) {
-    case 'success':
-      return `${baseClasses} bg-green-100 text-green-800 border border-green-200`
-    case 'error':
-      return `${baseClasses} bg-red-100 text-red-800 border border-red-200`
-    case 'warning':
-      return `${baseClasses} bg-yellow-100 text-yellow-800 border border-yellow-200`
-    default:
-      return `${baseClasses} bg-blue-100 text-blue-800 border border-blue-200`
-  }
-})
+const destinationData = ref([
+  {
+    id: 1,
+    status: "0:有効",
+    email: "aaa@nishuhan.co.jp",
+    role: "担当セールス",
+    statusType: "active",
+  },
+  {
+    id: 2,
+    status: "1:無効(テスト運用)",
+    email: "xxx@yyyy.co.jp",
+    role: "先方担当者",
+    statusType: "test",
+  },
+  {
+    id: 3,
+    status: "2:無効(削除)",
+    email: "zzz@yyyy.co.jp",
+    role: "2023年3月までの先方担当者",
+    statusType: "deleted",
+  },
+])
+
+const actionButtons = ref([
+  { id: 1, label: "検索-S", action: "searchS", icon: SearchIcon },
+  { id: 2, label: "検索-6", action: "search6", icon: SearchIcon },
+  { id: 3, label: "追加-1", action: "add1", icon: PlusIcon },
+  { id: 4, label: "変更-3", action: "modify3", icon: SettingsIcon },
+  { id: 5, label: "削除-2", action: "delete2", icon: Trash2Icon },
+])
 
 // Methods
-const showStatus = (message, type = 'info') => {
+const openDeleteDialog = (item) => {
+  selectedItem.value = item
+  dialogVisible.value = true
+}
+
+const confirmDelete = () => {
+  if (selectedItem.value) {
+    destinationData.value = destinationData.value.filter(item => item.id !== selectedItem.value.id)
+    showStatus(`${selectedItem.value.email} を削除しました`, "success")
+    dialogVisible.value = false
+    selectedItem.value = null
+  }
+}
+
+const editItem = (item) => {
+  showStatus(`${item.email} の編集画面に移動します`, "info")
+  console.log("Edit item:", item.id)
+}
+
+const showStatus = (message, type = "info") => {
   statusMessage.value = message
   statusType.value = type
   setTimeout(() => {
-    statusMessage.value = ''
+    statusMessage.value = ""
   }, 3000)
 }
 
 const handleAction = (action) => {
-  const actionMessages = {
-    search5: '検索-5を実行しました',
-    search6: '検索-6を実行しました',
-    add1: '追加-1を実行しました',
-    modify3: '変更-3を実行しました',
-    delete2: '削除-2を実行しました'
+  let actionMessages;
+  switch (action) {
+    case "searchS":
+      actionMessages = "検索-Sを実行しました"
+      break
+    case "search6":
+      actionMessages = "検索-6を実行しました"
+      break
+    case "add1":
+      actionMessages = "追加-1を実行しました"
+      break
+    case "modify3":
+      editItem({
+        id: 3,
+        status: "1:無効(テスト運用)",
+        email: ""})
+      break
+    case "delete2":
+      openDeleteDialog({
+        id: 4,
+        status: "0:有効",
+        email: ""})
+      break
   }
-  
-  showStatus(actionMessages[action] || `${action}を実行しました`, 'info')
-  console.log(`Action executed: ${action}`)
+
+  showStatus(actionMessages[action] || `${action}を実行しました`, "info")
+}
+
+const getStatusBadgeClass = (statusType) => {
+  const baseClasses = "px-2 py-1 rounded-md text-sm font-medium"
+  switch (statusType) {
+    case "active":
+      return `${baseClasses} bg-green-100 text-green-800`
+    case "test":
+      return `${baseClasses} bg-orange-100 text-orange-800`
+    case "deleted":
+      return `${baseClasses} bg-red-100 text-red-800`
+    default:
+      return `${baseClasses} bg-gray-100 text-gray-800 border border-gray-300`
+  }
+}
+
+const getStatusMessageClass = () => {
+  switch (statusType.value) {
+    case "success":
+      return "bg-green-50 text-green-800 border-green-200"
+    case "error":
+      return "bg-red-50 text-red-800 border-red-200"
+    default:
+      return "bg-blue-50 text-blue-800 border-blue-200"
+  }
 }
 </script>
 
 <style scoped>
+/* Custom styles for better appearance */
+.transition-colors {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
 /* Ensure table borders are consistent */
 table {
   border-collapse: collapse;
 }
 
-/* Custom styling for yellow badges */
-.bg-yellow-400 {
-  background-color: #fbbf24;
-}
-
-/* Custom styling for green headers */
-.bg-green-200 {
-  background-color: #bbf7d0;
-}
-
-.bg-green-100 {
-  background-color: #dcfce7;
-}
-
 /* Hover effects for buttons */
 button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 button:active:not(:disabled) {
@@ -301,15 +360,13 @@ button {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .flex.justify-between {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
+  .grid-cols-5 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
   
-  .flex.space-x-4 {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+  .grid-cols-5 button:last-child {
+    grid-column: span 2;
   }
 }
 </style>
