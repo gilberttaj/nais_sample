@@ -38,16 +38,9 @@ const routes = [
     component: SignUpPage
   },
   {
-    // CHANGED: Path updated to match your amplifyconfiguration.json redirectSignIn
-    path: '/auth/callback',
-    name: 'AuthCallback', // Name updated for clarity
+    path: '/auth/validation',
+    name: 'AuthCallback', 
     component: AuthValidation,
-  },
-  {
-    // NEW: Added route to handle the redirectSignOut from your amplifyconfiguration.json
-    path: '/auth/signout',
-    name: 'SignOut',
-    component: SignInPage, // Redirects to sign-in page after logout
   },
   {
     path: '/404',
