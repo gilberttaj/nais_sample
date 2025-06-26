@@ -1,14 +1,8 @@
 <template>
         <!-- Page Content -->
-      <main class="flex-1 overflow-y-auto">
+      <main class="flex-1 overflow-y-auto px-6 py-12">
         <!-- Email Master Form -->
         <div v-if="activeMenu === 'email-master'" class="px-6" >
-          <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
-            <!-- Blue Header -->
-            <div class="bg-blue-400 text-center text-white p-4 rounded-lg mb-6 xl:w-[95%]">
-              <h1 class="text-xl font-bold items-center text-white">一覧表示</h1>
-            </div>
-          </div>
 
 
           <!-- Main Form -->

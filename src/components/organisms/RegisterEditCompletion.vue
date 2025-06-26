@@ -14,7 +14,6 @@
 </template>
 
 <script setup lang='ts'>
-import router from '@/router'
 // import Stepper from "@/components/Stepper.vue";
 
 </script>
