@@ -28,7 +28,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/detail',///detail/:id
+    path: '/detail/:id',
     name: 'Detail',
     component: DetailPage,
     meta: { requiresAuth: true }

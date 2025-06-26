@@ -1,0 +1,16 @@
+com\nais\auth\validators\EmailValidator.class
+com\nais\handlers\AuthResult.class
+com\nais\handlers\CurrentUser.class
+com\nais\handlers\GoogleAuth.class
+com\nais\handlers\AuthUrlResult.class
+com\nais\auth\validators\EmailValidationResult.class
+com\nais\handlers\GoogleUserInfo.class
+com\nais\handlers\ResponseHelper.class
+com\nais\auth\services\WorkspaceAuthService.class
+com\nais\handlers\AuthHandler.class
+com\nais\handlers\TokenExchangeResult.class
+com\nais\handlers\GoogleOAuthProxy.class
+com\nais\handlers\SignOutResult.class
+com\nais\handlers\CognitoAuth.class
+com\nais\handlers\AuthClient.class
+com\nais\handlers\AuthConfig.class

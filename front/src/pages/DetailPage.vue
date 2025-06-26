@@ -2,7 +2,7 @@
         <!-- Page Content -->
       <main class="flex-1 overflow-y-auto">
         <!-- Email Master Form (PDF送信マスタ) -->
-        <div v-if="activeMenu === 'email-master'" class="px-6" >
+        <div v-if="activeMenu === 'email-master'" class="p-6" >
           <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
             <!-- Blue Header -->
             <div class="bg-blue-400 text-center text-white p-4 rounded-lg mb-6 xl:w-[95%]">
@@ -17,7 +17,7 @@
               dfdfd
             </div> -->
             <div class="rounded-2xl bg-white border-b border-gray-200 shadow-lg xl:w-[95%]">
-              <div class="py-6 mt-2">
+              <div class="p-6 mt-2">
                 <DetailDisplay/>
               </div>
             </div>

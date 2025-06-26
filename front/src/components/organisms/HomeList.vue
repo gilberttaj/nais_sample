@@ -1,12 +1,6 @@
 <template>
     <div class="overflow-hidden bg-white">
-        <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-            <h3 class="text-lg font-semibold text-gray-800">
-                Email Master List
-            </h3>
-            </div>
-
+        <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-end">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <form>
                 <div class="relative">
@@ -32,8 +26,7 @@
             </div>
             <div>
                 <button @click="router.push('register')" class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-blue-600">
-                    Register New Mailer
-
+                    新規登録
                     <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M9.2502 4.99951C9.2502 4.5853 9.58599 4.24951 10.0002 4.24951C10.4144 4.24951 10.7502 4.5853 10.7502 4.99951V9.24971H15.0006C15.4148 9.24971 15.7506 9.5855 15.7506 9.99971C15.7506 10.4139 15.4148 10.7497 15.0006 10.7497H10.7502V15.0001C10.7502 15.4143 10.4144 15.7501 10.0002 15.7501C9.58599 15.7501 9.2502 15.4143 9.2502 15.0001V10.7497H5C4.58579 10.7497 4.25 10.4139 4.25 9.99971C4.25 9.5855 4.58579 9.24971 5 9.24971H9.2502V4.99951Z" fill=""></path>
                 </svg>
@@ -57,7 +50,7 @@
                             </div>
                             <div>
                             <span class="block font-medium text-gray-500 text-theme-xs">
-                                Business ID
+                                業務ID
                             </span>
                             </div>
                         </div>
@@ -66,21 +59,14 @@
                     <th class="px-6 py-3 whitespace-nowrap">
                         <div class="flex items-center">
                         <p class="font-medium text-gray-500 text-theme-xs">
-                            Customer
+                            送信先名称
                         </p>
                         </div>
                     </th>
                     <th class="px-6 py-3 whitespace-nowrap">
                         <div class="flex items-center">
                         <p class="font-medium text-gray-500 text-theme-xs">
-                            Close Date
-                        </p>
-                        </div>
-                    </th>
-                    <th class="px-6 py-3 whitespace-nowrap">
-                        <div class="flex items-center">
-                        <p class="font-medium text-gray-500 text-theme-xs">
-                            Status
+                            作成日時
                         </p>
                         </div>
                     </th>
@@ -95,7 +81,7 @@
                 </thead>
                 <!-- table header end -->
                 <tbody class="divide-y divide-gray-100">
-                    <tr v-for="user in users" :key="user.id" @click="router.push('detail')" class="cursor-pointer hover:bg-gray-50"><!--{ name: 'detail', params: { id: user.id } }-->
+                    <tr v-for="user in users" :key="user.id" @click="router.push(`/detail/${user.id}`)" class="cursor-pointer hover:bg-gray-50"><!--{ name: 'detail', params: { id: user.id } }-->
                         <!-- Checkbox Column -->
                         <td class="px-6 py-3 whitespace-nowrap">
                             <div class="flex items-center">
@@ -141,18 +127,6 @@
                         <td class="px-6 py-3 whitespace-nowrap">
                             <div class="flex items-center">
                             <p class="text-gray-700 text-theme-sm">{{ user.date }}</p>
-                            </div>
-                        </td>
-
-                        <!-- Status Column -->
-                        <td class="px-6 py-3 whitespace-nowrap">
-                            <div class="flex items-center">
-                            <p 
-                                class="text-theme-xs rounded-full px-2 py-0.5 font-medium"
-                                :class="user.status === 'Complete' ? 'bg-success-50 text-success-600' : 'bg-warning-50 text-warning-600'"
-                            >
-                                {{ user.status }}
-                            </p>
                             </div>
                         </td>
 

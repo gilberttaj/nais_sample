@@ -1,0 +1,729 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Nais Amplify-like Authentication Library with Google Workspace Email Validation'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: java11
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        AUTH_LIBRARY_VERSION: "2.1.0"
+        AUTH_ARCHITECTURE: "amplify-like"
+        WORKSPACE_AUTH_ENABLED: "true"
+
+Parameters:
+  Stage:
+    Type: String
+    Description: Deployment stage
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  VpcId:
+    Type: String
+    Description: VPC ID where API Gateway and Lambda functions will be deployed
+
+  SubnetId1:
+    Type: String
+    Description: First private subnet ID for Lambda VPC configuration
+
+  SubnetId2:
+    Type: String
+    Description: Second private subnet ID for Lambda VPC configuration
+
+  ApiGatewayVpcEndpointId:
+    Type: String
+    Description: VPC Endpoint ID for API Gateway private access
+
+  CognitoUserPoolId:
+    Type: String
+    Description: ID of the existing Cognito User Pool for authentication
+
+  CognitoUserPoolClientSecret:
+    Type: String
+    Description: Cognito User Pool App Client Secret
+    NoEcho: true
+
+  CognitoUserPoolClientId:
+    Type: String
+    Description: ID of the Cognito User Pool Client
+
+  GoogleClientId:
+    Type: String
+    Description: Google OAuth Client ID
+    NoEcho: true
+
+  GoogleClientSecret:
+    Type: String
+    Description: Google OAuth Client Secret
+    NoEcho: true
+
+  # New parameters for workspace authentication
+  AllowedEmailDomains:
+    Type: CommaDelimitedList
+    Description: List of allowed email domains for workspace authentication (e.g., nais.com,subsidiary.com)
+    Default: "nais.com,company.com"
+
+  AllowedEmails:
+    Type: CommaDelimitedList
+    Description: List of individual allowed email addresses (optional)
+    Default: ""
+
+  WorkspaceAuthStrict:
+    Type: String
+    Description: Enable strict workspace authentication (true/false)
+    Default: "true"
+
+  # Optional parameters with defaults (retained from original)
+  CognitoDomainUrl:
+    Type: String
+    Description: Full URL of the Cognito domain
+    Default: https://nais-stage.auth.ap-northeast-1.amazoncognito.com
+
+  DBHost:
+    Type: String
+    Description: RDS Host name (optional)
+    Default: localhost
+
+  DBPort:
+    Type: String
+    Description: RDS Port (optional)
+    Default: '5432'
+
+  DBName:
+    Type: String
+    Description: Database name (optional)
+    Default: nais
+
+  DBUser:
+    Type: String
+    Description: Database username (optional)
+    Default: postgres
+
+  DBPassword:
+    Type: String
+    Description: Database password (optional)
+    NoEcho: true
+    Default: password
+
+  # New parameters for OAuth flow
+  FrontendUrl:
+    Type: String
+    Description: Frontend application URL for OAuth redirects
+    Default: "https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com"
+
+Conditions:
+  IsProduction: !Equals [!Ref Stage, "prod"]
+  HasAllowedEmails: !Not [!Equals [!Join ["", !Ref AllowedEmails], ""]]
+
+Resources:
+  # ========================================
+  # Enhanced Secrets Management with Workspace Config
+  # ========================================
+  
+  AuthLibrarySecrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${Stage}-nais-auth-secrets-${AWS::StackName}'
+      Description: !Sub 'Authentication secrets for Nais Amplify-like library with workspace validation (${Stage})'
+      SecretString: !Sub 
+        - |
+          {
+            "client_secret": "${CognitoUserPoolClientSecret}",
+            "google_client_id": "${GoogleClientId}",
+            "google_client_secret": "${GoogleClientSecret}",
+            "auth_library_version": "2.1.0",
+            "stage": "${Stage}",
+            "workspace_auth_enabled": "${WorkspaceAuthStrict}",
+            "allowed_domains": "${DomainsString}",
+            "allowed_emails": "${EmailsString}"
+          }
+        - DomainsString: !Join [",", !Ref AllowedEmailDomains]
+          EmailsString: !If 
+            - HasAllowedEmails
+            - !Join [",", !Ref AllowedEmails]
+            - ""
+      Tags:
+        - Key: Application
+          Value: Nais
+        - Key: Environment
+          Value: !Ref Stage
+        - Key: Component
+          Value: Authentication
+        - Key: WorkspaceAuth
+          Value: !Ref WorkspaceAuthStrict
+
+  # Security Group (retained from original)
+  AmplifyAuthSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 'Security group for Nais Amplify-like Auth Lambda with Workspace validation (${Stage})'
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS for AWS services and Google OAuth APIs
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP for redirects and health checks
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
+          Description: DNS resolution
+      Tags:
+        - Key: Name
+          Value: !Sub '${Stage}-amplify-auth-security-group'
+        - Key: Application
+          Value: Nais
+        - Key: Environment
+          Value: !Ref Stage
+
+  # ========================================
+  # Enhanced Lambda Function with Workspace Auth
+  # ========================================
+  
+  AmplifyAuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'Nais-AmplifyAuth-WorkspaceValidation-${Stage}'
+      Description: !Sub 'Nais Amplify-like Authentication Handler with Google Workspace email validation (${Stage})'
+      CodeUri: ./
+      Handler: com.nais.handlers.AuthHandler::handleRequest
+      Runtime: java11
+      MemorySize: !If [IsProduction, 1024, 512]
+      Timeout: !If [IsProduction, 60, 30]
+      
+      # VpcConfig (commented out but retained for future use)
+      # VpcConfig:
+      #   SecurityGroupIds:
+      #     - !Ref AmplifyAuthSecurityGroup
+      #   SubnetIds:
+      #     - !Ref SubnetId1
+      #     - !Ref SubnetId2
+      
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # - VPCAccessPolicy: {}
+        - Statement:
+            - Sid: SecretsManagerAccess
+              Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+                - secretsmanager:DescribeSecret
+              Resource: !Ref AuthLibrarySecrets
+            - Sid: CognitoUserPoolAccess
+              Effect: Allow
+              Action:
+                - cognito-idp:InitiateAuth
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminSetUserPassword
+                - cognito-idp:GlobalSignOut
+                - cognito-idp:AdminGetUser
+                - cognito-idp:DescribeUserPool
+                - cognito-idp:ListUsers
+              Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}'
+            - Sid: CloudWatchLogsAccess
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+      
+      Environment:
+        Variables:
+          # Core Configuration
+          USER_POOL_ID: !Ref CognitoUserPoolId
+          CLIENT_ID: !Ref CognitoUserPoolClientId
+          SECRET_NAME: !Ref AuthLibrarySecrets
+          GOOGLE_CLIENT_ID: !Ref GoogleClientId
+          GOOGLE_REDIRECT_URI: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/callback'
+
+
+          # NEW REQUIRED ENVIRONMENT VARIABLES for the refactored code
+          COGNITO_DOMAIN_URL: !Ref CognitoDomainUrl
+          COGNITO_APP_CLIENT_SECRET: !Ref CognitoUserPoolClientSecret
+          OAUTH_CALLBACK_URL: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/callback'
+          FRONTEND_URL: !Ref FrontendUrl
+          
+          # Workspace Authentication Configuration
+          WORKSPACE_AUTH_ENABLED: !Ref WorkspaceAuthStrict
+          ALLOWED_EMAIL_DOMAINS: !Join [",", !Ref AllowedEmailDomains]
+          ALLOWED_EMAILS: !If 
+            - HasAllowedEmails
+            - !Join [",", !Ref AllowedEmails]
+            - ""
+          
+          # Database Configuration (retained from original)
+          DB_URL: !Sub 'jdbc:postgresql://${DBHost}:${DBPort}/${DBName}'
+          DB_USER: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+          
+          # Library Configuration
+          AUTH_LIBRARY_VERSION: '2.1.0'
+          AUTH_ARCHITECTURE: 'amplify-like'
+          STAGE: !Ref Stage
+      
+      Tags:
+        Application: Nais
+        Environment: !Ref Stage
+        Component: Authentication
+        Architecture: Amplify-like
+        WorkspaceAuth: !Ref WorkspaceAuthStrict
+
+  # ========================================
+  # API Gateway (updated name but keeping all functionality)
+  # ========================================
+  
+  NaisRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'Nais-AmplifyAuth-Workspace-${Stage}'
+      Description: !Sub 'Nais Amplify-like Authentication API with Google Workspace validation (${Stage})'
+      EndpointConfiguration:
+        Types:
+          - PRIVATE
+        VpcEndpointIds:
+          - !Ref ApiGatewayVpcEndpointId
+      Policy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: execute-api:Invoke
+            Resource: execute-api:/*
+            Condition:
+              StringEquals:
+                aws:SourceVpce: !Ref ApiGatewayVpcEndpointId
+
+  # Cognito Authorizer (retained from original)
+  AmplifyAuthAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: !Sub 'AmplifyAuth-Cognito-Workspace-${Stage}'
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      RestApiId: !Ref NaisRestApi
+      ProviderARNs:
+        - !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}'
+
+  # ========================================
+  # API Resources (ALL retained from original)
+  # ========================================
+  
+  # Root /auth resource
+  AuthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !GetAtt NaisRestApi.RootResourceId
+      PathPart: auth
+
+  # Health endpoint
+  AuthHealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref AuthResource
+      PathPart: health
+
+  AuthHealthMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref AuthHealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  AuthHealthOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref AuthHealthResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  # Google OAuth resources (ALL retained from original)
+  GoogleResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref AuthResource
+      PathPart: google
+
+  GoogleLoginResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref GoogleResource
+      PathPart: login
+
+  GoogleLoginPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleLoginResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  GoogleLoginGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleLoginResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  GoogleLoginOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleLoginResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  GoogleCallbackResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref GoogleResource
+      PathPart: callback
+
+  GoogleCallbackPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleCallbackResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  GoogleCallbackGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleCallbackResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  GoogleCallbackOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleCallbackResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  # Google Proxy resources (RETAINED from original - important for future use)
+  GoogleProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref GoogleResource
+      PathPart: proxy
+
+  GoogleProxyPathResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref GoogleProxyResource
+      PathPart: '{proxy+}'
+
+  GoogleProxyAnyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleProxyResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  GoogleProxyPathAnyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref GoogleProxyPathResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.proxy: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.proxy: method.request.path.proxy
+
+  # ========================================
+  # New Workspace Management Endpoints
+  # ========================================
+  
+  # Workspace resource
+  WorkspaceResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref AuthResource
+      PathPart: workspace
+
+  # Domains endpoint
+  WorkspaceDomainsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref WorkspaceResource
+      PathPart: domains
+
+  WorkspaceDomainsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref WorkspaceDomainsResource
+      HttpMethod: GET
+      AuthorizationType: AWS_IAM  # Requires IAM auth for admin access
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  WorkspaceDomainsOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref WorkspaceDomainsResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  # ========================================
+  # Token Management and Logout (RETAINED from original)
+  # ========================================
+  
+  # Token management
+  TokenResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref AuthResource
+      PathPart: token
+
+  TokenRefreshResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref TokenResource
+      PathPart: refresh
+
+  TokenRefreshMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref TokenRefreshResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  TokenRefreshOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref TokenRefreshResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  # Logout
+  LogoutResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref AuthResource
+      PathPart: logout
+
+  LogoutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref LogoutResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  LogoutOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref LogoutResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
+
+  # ========================================
+  # Lambda Permission and Deployment (RETAINED from original)
+  # ========================================
+  
+  AmplifyAuthLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AmplifyAuthFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*'
+
+  AmplifyApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - AuthHealthMethod
+      - AuthHealthOptionsMethod
+      - GoogleLoginPostMethod
+      - GoogleLoginGetMethod
+      - GoogleLoginOptionsMethod
+      - GoogleCallbackPostMethod
+      - GoogleCallbackGetMethod
+      - GoogleCallbackOptionsMethod
+      - GoogleProxyAnyMethod
+      - GoogleProxyPathAnyMethod
+      - WorkspaceDomainsMethod
+      - WorkspaceDomainsOptionsMethod
+      - TokenRefreshMethod
+      - TokenRefreshOptionsMethod
+      - LogoutMethod
+      - LogoutOptionsMethod
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      StageName: !Ref Stage
+
+  # Enhanced CloudWatch Log Group
+  AmplifyAuthLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/Nais-AmplifyAuth-WorkspaceValidation-${Stage}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+Outputs:
+  AmplifyAuthFunctionArn:
+    Description: Amplify-like Authentication Lambda Function ARN with Workspace Validation
+    Value: !GetAtt AmplifyAuthFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-AmplifyAuthFunctionArn'
+
+  ApiGatewayId:
+    Description: API Gateway ID
+    Value: !Ref NaisRestApi
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiGatewayId'
+
+  ApiBaseEndpoint:
+    Description: Base API endpoint (VPC private access)
+    Value: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiBaseEndpoint'
+
+  HealthCheckEndpoint:
+    Description: Health check endpoint with workspace authentication info
+    Value: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/health'
+
+  GoogleLoginEndpoint:
+    Description: Google login endpoint with workspace validation
+    Value: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/login'
+
+  GoogleCallbackEndpoint:
+    Description: Google OAuth callback endpoint with workspace validation
+    Value: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/callback'
+
+  WorkspaceDomainsEndpoint:
+    Description: Workspace domains configuration endpoint (admin access)
+    Value: !Sub 'https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/workspace/domains'
+
+  SecretsManagerArn:
+    Description: ARN of the Secrets Manager secret containing workspace configuration
+    Value: !Ref AuthLibrarySecrets
+    Export:
+      Name: !Sub '${AWS::StackName}-AuthLibrarySecrets'
+
+  WorkspaceAuthConfiguration:
+    Description: Workspace authentication configuration summary
+    Value: !Sub 
+      - "Workspace Auth: ${WorkspaceAuthStrict}, Domains: ${DomainsString}, Stage: ${Stage}"
+      - DomainsString: !Join [",", !Ref AllowedEmailDomains]
+
+  DeploymentInstructions:
+    Description: Post-deployment setup instructions for workspace authentication
+    Value: !Sub 
+      - |
+        🚀 Deployment successful with Google Workspace authentication! 
+        
+        📧 Workspace Email Validation: ${WorkspaceAuthStrict}
+        📧 Allowed Domains: ${DomainsString}
+        
+        🔗 Next steps:
+        1. Configure Google OAuth redirect URI: ${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/callback
+        2. Test health check: GET /auth/health
+        3. Test Google login: POST /auth/google/login
+        4. Check workspace config: GET /auth/workspace/domains (admin access required)
+        
+        🛡️ Security Notes:
+        - Only users from approved domains can authenticate
+        - Email validation is enforced at the Google OAuth callback
+        - Configuration is stored securely in AWS Secrets Manager
+      - DomainsString: !Join [",", !Ref AllowedEmailDomains]
