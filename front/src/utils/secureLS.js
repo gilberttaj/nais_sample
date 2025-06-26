@@ -1,11 +1,11 @@
 import SecureLS from "secure-ls";
-
+import { getConfig } from './config.js';
 
 // Create the configuration object
 const config = {
   encodingType: "aes",
   isCompression: true,
-  encryptionSecret: import.meta.env.VITE_SECURE_LS_KEY,
+  encryptionSecret: getConfig('SECURE_LS_KEY', 'default-secure-key-change-in-production'),
 };
 
 // Initialize SecureLS with the configuration
