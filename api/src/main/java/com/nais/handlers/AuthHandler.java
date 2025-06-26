@@ -232,7 +232,7 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             
             String frontendUrl = System.getenv("FRONTEND_URL");
             if (frontendUrl == null) {
-                frontendUrl = "https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com";
+                frontendUrl = "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com";
             }
             String redirectUrl = frontendUrl + "/auth/validation?status=error&message=" + 
                 URLEncoder.encode("OAuth error: " + error + (errorDescription != null ? " - " + errorDescription : ""), "UTF-8");
@@ -270,7 +270,7 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             
             String frontendUrl = System.getenv("FRONTEND_URL");
             if (frontendUrl == null) {
-                frontendUrl = "https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com";
+                frontendUrl = "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com";
             }
             String redirectUrl = frontendUrl + "/auth/validation?status=error&message=" + 
                 URLEncoder.encode("No authorization code provided", "UTF-8");
@@ -438,7 +438,7 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             // Redirect to frontend with tokens in URL parameters
             String frontendUrl = System.getenv("FRONTEND_URL");
             if (frontendUrl == null) {
-                frontendUrl = "https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com"; // fallback
+                frontendUrl = "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com"; // fallback
             }
             
             StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/auth/validation");
@@ -519,7 +519,7 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         try {
             String frontendUrl = System.getenv("FRONTEND_URL");
             if (frontendUrl == null) {
-                frontendUrl = "https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com";
+                frontendUrl = "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com";
             }
             String redirectUrl = frontendUrl + "/auth/validation?status=error&message=" + 
                 URLEncoder.encode(errorMessage, "UTF-8") + "&workspace_auth=true";
