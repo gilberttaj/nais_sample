@@ -84,6 +84,12 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             return handleOptionsRequest();
         }
         
+        // Check if running in local development mode
+        boolean isLocalMode = isLocalDevelopmentMode();
+        if (isLocalMode) {
+            context.getLogger().log("Running in local development mode with dummy authentication");
+        }
+        
         switch (path) {
             case "/auth/health":
                 if ("GET".equals(httpMethod)) {
@@ -94,26 +100,26 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             // OAuth Step 1: Initiate OAuth flow
             case "/auth/google/login":
                 if ("GET".equals(httpMethod)) {
-                    return initiateGoogleOAuth(context);
+                    return isLocalMode ? handleLocalLogin(context) : initiateGoogleOAuth(context);
                 }
                 break;
                 
             // OAuth Step 2: Handle OAuth callback from Google
             case "/auth/google/callback":
                 if ("GET".equals(httpMethod)) {
-                    return handleGoogleOAuthCallback(input);
+                    return isLocalMode ? handleLocalCallback(input, context) : handleGoogleOAuthCallback(input);
                 }
                 break;
                 
             case "/auth/token/refresh":
                 if ("POST".equals(httpMethod)) {
-                    return handleTokenRefresh(input);
+                    return isLocalMode ? handleLocalTokenRefresh(input, context) : handleTokenRefresh(input);
                 }
                 break;
                 
             case "/auth/logout":
                 if ("POST".equals(httpMethod)) {
-                    return handleLogout(input);
+                    return isLocalMode ? handleLocalLogout(input, context) : handleLogout(input);
                 }
                 break;
                 
@@ -651,5 +657,197 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         response.put("message", "Successfully logged out");
         
         return ResponseHelper.createSuccessResponse(response);
+    }
+
+    /**
+     * Check if running in local development mode
+     */
+    private boolean isLocalDevelopmentMode() {
+        String environment = System.getenv("ENVIRONMENT");
+        String localMode = System.getenv("LOCAL_MODE");
+        
+        // Debug logging
+        Context context = null;
+        try {
+            if (authClient != null) {
+                context = authClient.getLambdaContext();
+                if (context != null) {
+                    context.getLogger().log("Local mode check - ENVIRONMENT: " + environment + ", LOCAL_MODE: " + localMode);
+                }
+            }
+        } catch (Exception e) {
+            // Ignore if context not available
+        }
+        
+        // Prioritize explicit local mode settings
+        return "local".equalsIgnoreCase(environment) || "true".equalsIgnoreCase(localMode);
+    }
+
+    /**
+     * Generate dummy JWT token for local development
+     */
+    private String generateDummyJWT(String email, String tokenType) {
+        try {
+            // Create header
+            Map<String, Object> header = new HashMap<>();
+            header.put("alg", "HS256");
+            header.put("typ", "JWT");
+            
+            // Create payload
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("sub", "dummy-user-" + email.hashCode());
+            payload.put("email", email);
+            payload.put("email_verified", true);
+            payload.put("name", "Local Dev User");
+            payload.put("given_name", "Local");
+            payload.put("family_name", "User");
+            payload.put("iss", "local-dev-issuer");
+            payload.put("aud", "local-dev-client");
+            payload.put("token_use", tokenType); // "id" or "access"
+            payload.put("iat", System.currentTimeMillis() / 1000);
+            payload.put("exp", (System.currentTimeMillis() / 1000) + 3600); // 1 hour
+            
+            // Encode header and payload
+            String encodedHeader = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(objectMapper.writeValueAsString(header).getBytes("UTF-8"));
+            String encodedPayload = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(objectMapper.writeValueAsString(payload).getBytes("UTF-8"));
+            
+            // Create dummy signature (not cryptographically secure, for local dev only)
+            String signature = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString("dummy-signature".getBytes("UTF-8"));
+            
+            return encodedHeader + "." + encodedPayload + "." + signature;
+            
+        } catch (Exception e) {
+            return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkdW1teS11c2VyIiwiZW1haWwiOiJkZXZAZXhhbXBsZS5jb20iLCJuYW1lIjoiTG9jYWwgRGV2IFVzZXIifQ.dummy-signature";
+        }
+    }
+
+    /**
+     * Handle local development login
+     */
+    private APIGatewayProxyResponseEvent handleLocalLogin(Context context) {
+        context.getLogger().log("Local development login initiated");
+        
+        try {
+            String localFrontendUrl = System.getenv("LOCAL_FRONTEND_URL");
+            if (localFrontendUrl == null) {
+                localFrontendUrl = "http://localhost:3000"; // Default for local React app
+            }
+            
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("status", "success");
+            responseBody.put("redirectUrl", localFrontendUrl + "/auth/validation?mode=local");
+            responseBody.put("message", "Local development mode - proceeding to dummy authentication");
+            responseBody.put("workspace_auth_enabled", false);
+            responseBody.put("local_mode", true);
+            
+            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+            response.setStatusCode(200);
+            response.setHeaders(getResponseHeaders());
+            response.setBody(objectMapper.writeValueAsString(responseBody));
+            
+            return response;
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in local login: " + e.getMessage());
+            return createErrorResponse(500, "Local authentication error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle local development callback with dummy tokens
+     */
+    private APIGatewayProxyResponseEvent handleLocalCallback(APIGatewayProxyRequestEvent input, Context context) {
+        context.getLogger().log("Local development callback with dummy tokens");
+        
+        try {
+            String dummyEmail = "dev@example.com";
+            String userEmail = System.getenv("LOCAL_DEV_EMAIL");
+            if (userEmail != null && !userEmail.isEmpty()) {
+                dummyEmail = userEmail;
+            }
+            
+            // Generate dummy tokens
+            String idToken = generateDummyJWT(dummyEmail, "id");
+            String accessToken = generateDummyJWT(dummyEmail, "access");
+            String refreshToken = "dummy-refresh-token-" + System.currentTimeMillis();
+            
+            // For local development, return JSON response instead of redirect to avoid CORS issues
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Local development authentication successful");
+            response.put("email", dummyEmail);
+            response.put("id_token", idToken);
+            response.put("access_token", accessToken);
+            response.put("refresh_token", refreshToken);
+            response.put("expires_in", 3600);
+            response.put("token_type", "Bearer");
+            response.put("local_mode", true);
+            
+            context.getLogger().log("Local authentication successful for: " + dummyEmail);
+            
+            APIGatewayProxyResponseEvent apiResponse = new APIGatewayProxyResponseEvent();
+            apiResponse.setStatusCode(200);
+            apiResponse.setHeaders(getResponseHeaders());
+            apiResponse.setBody(objectMapper.writeValueAsString(response));
+            
+            return apiResponse;
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in local callback: " + e.getMessage());
+            return createErrorResponse(500, "Local callback error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle local development token refresh
+     */
+    private APIGatewayProxyResponseEvent handleLocalTokenRefresh(APIGatewayProxyRequestEvent input, Context context) {
+        context.getLogger().log("Local development token refresh");
+        
+        try {
+            String dummyEmail = "dev@example.com";
+            String userEmail = System.getenv("LOCAL_DEV_EMAIL");
+            if (userEmail != null && !userEmail.isEmpty()) {
+                dummyEmail = userEmail;
+            }
+            
+            // Generate new dummy tokens
+            String newIdToken = generateDummyJWT(dummyEmail, "id");
+            String newAccessToken = generateDummyJWT(dummyEmail, "access");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("id_token", newIdToken);
+            response.put("access_token", newAccessToken);
+            response.put("token_type", "Bearer");
+            response.put("expires_in", 3600);
+            response.put("local_mode", true);
+            
+            return ResponseHelper.createSuccessResponse(response);
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in local token refresh: " + e.getMessage());
+            return createErrorResponse(500, "Local token refresh failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle local development logout
+     */
+    private APIGatewayProxyResponseEvent handleLocalLogout(APIGatewayProxyRequestEvent input, Context context) {
+        context.getLogger().log("Local development logout");
+        
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Successfully logged out from local development mode");
+            response.put("local_mode", true);
+            
+            return ResponseHelper.createSuccessResponse(response);
+        } catch (Exception e) {
+            context.getLogger().log("Error in local logout: " + e.getMessage());
+            return createErrorResponse(500, "Local logout failed: " + e.getMessage());
+        }
     }
 }

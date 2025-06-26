@@ -19,10 +19,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
-import ls from '@/utils/secureLS'
-
+import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loading = ref(true)
 const error = ref(false)
 const errorMessage = ref('')
@@ -37,30 +37,9 @@ const getQueryParams = () => {
   return result
 }
 
-// Function to store auth tokens in localStorage
-const storeAuthTokens = (tokens) => {
-  ls.set('id_token', tokens.id_token)
-  ls.set('access_token', tokens.access_token)
-
-  if (tokens.refresh_token) {
-    ls.set('refresh_token', tokens.refresh_token)
-  }
-
-  ls.set('token_type', tokens.token_type)
-
-  // Store expiration time as timestamp
-  const expiresIn = parseInt(tokens.expires_in)
-  const expirationTime = Date.now() + expiresIn * 1000
-  ls.set('token_expiration', expirationTime.toString())
-}
-
 // Function to navigate to login page
 const goToLogin = () => {
-  ls.remove('id_token')
-  ls.remove('access_token')
-  ls.remove('refresh_token')
-  ls.remove('token_type')
-  ls.remove('token_expiration')
+  authStore.clearAuth()
   router.push('/signin')
 }
 
@@ -76,8 +55,8 @@ onMounted(() => {
     }
 
     if (params.status === 'success' && params.access_token) {
-      // Store tokens in localStorage
-      storeAuthTokens({
+      // Store tokens using auth store
+      authStore.storeAuthTokens({
         id_token: params.id_token,
         access_token: params.access_token,
         refresh_token: params.refresh_token,

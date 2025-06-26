@@ -24,12 +24,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, watchEffect } from 'vue'
+import { ref, reactive, watchEffect, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import TopNavbar from './components/atoms/TopNavbar.vue'
 import SidebarMenu from './components/atoms/SideMenu.vue'
+import { useAuthStore } from '@/stores/auth.js'
 
 const route = useRoute()
+const authStore = useAuthStore()
 
 const isAuthPage = ref(false)
 watchEffect(() => {
@@ -40,17 +42,30 @@ watchEffect(() => {
 const activeMenu = ref('email-master')
 const searchQuery = ref('')
 
+// Use reactive user from auth store or fallback
 const currentUser = reactive({
   name: '作業担当',
   lastLogin: new Date('2024-12-01T10:45:00'),
   executionUser: '実行担当'
 })
 
+// Initialize auth on app start
+onMounted(() => {
+  authStore.initializeAuth()
+  authStore.setupTokenRefresh()
+})
+
 function handleSearch() {
   console.log('Searching for:', searchQuery.value)
 }
 
-function logout() {
-  alert('Logged out')
+async function logout() {
+  try {
+    await authStore.signOut()
+    // Redirect to sign in page after logout
+    window.location.href = '/signin'
+  } catch (error) {
+    console.error('Logout error:', error)
+  }
 }
 </script>

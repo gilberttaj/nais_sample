@@ -1,7 +1,7 @@
 <template>
   <div class="w-full max-w-md">
-    <GoogleSignInButton @click="handleGoogleSignIn" :disabled="isGoogleLoading">
-      <template #icon v-if="isGoogleLoading">
+    <GoogleSignInButton @click="handleGoogleSignIn" :disabled="authStore.isLoading">
+      <template #icon v-if="authStore.isLoading">
         <LoadingSpinner :size="20" :dot-size="4" class="mr-2" />
       </template>
     </GoogleSignInButton>
@@ -9,29 +9,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import GoogleSignInButton from '@/components/molecules/GoogleSignInButton.vue'
 import LoadingSpinner from '@/components/atoms/LoadingSpinner.vue'
-import axios from 'axios'
-import { getApiUrl } from '@/utils/config.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 
-const isGoogleLoading = ref(false)
+const router = useRouter()
+const authStore = useAuthStore()
 
-// Methods
+// Handle Google sign-in
 const handleGoogleSignIn = async () => {
   try {
-    isGoogleLoading.value = true;
-    const API_URL = getApiUrl();
-    const response = await axios.get(`${API_URL}/auth/google/login`);
-    
-    if (response.data && response.data.redirectUrl) {
-      // Redirect the browser to Google login
-      window.location.href = response.data.redirectUrl;
-    }
+    await authStore.signInWithGoogle(router)
   } catch (error) {
-    console.error('Error initiating Google login:', error);
-    isGoogleLoading.value = false;
+    console.error('Sign-in error:', error)
+    // You can add user-friendly error handling here
+    // For example, show a toast notification or set an error state
   }
 }
 
