@@ -1,7 +1,16 @@
 // Configuration utility - detects environment and uses appropriate env var method
 const isAppRunner = () => {
-  // Detect if running in App Runner (Node.js runtime)
-  return typeof process !== 'undefined' && process.env && !import.meta.env?.DEV;
+  // Check if we're running in a Node.js runtime (like App Runner with 'serve')
+  // Key indicators: process exists, we're not in Vite dev mode, or we're in production
+  const hasProcess = typeof process !== 'undefined' && process.env;
+  const isViteDev = typeof window !== 'undefined' && import.meta?.env?.DEV === true;
+  const isProduction = hasProcess && process.env.NODE_ENV === 'production';
+  
+  // Use process.env if:
+  // 1. We're in production (App Runner sets NODE_ENV=production)
+  // 2. We have process.env but are NOT in Vite dev mode
+  // 3. We're running with 'serve' (PORT is set by App Runner)
+  return hasProcess && (isProduction || !isViteDev || !!process.env.PORT);
 }
 
 const getEnvVar = (key) => {
