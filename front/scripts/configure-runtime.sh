@@ -9,8 +9,9 @@ if [ ! -f "$CONFIG_FILE" ]; then
     CONFIG_FILE="./public/config.js"
 fi
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Warning: Could not find config.js, creating in current directory"
-    CONFIG_FILE="./config.js"
+    echo "Creating config.js in dist directory"
+    mkdir -p ./dist
+    CONFIG_FILE="./dist/config.js"
 fi
 
 # Create the runtime configuration

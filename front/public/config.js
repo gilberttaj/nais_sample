@@ -1,5 +1,7 @@
-// Runtime configuration
+// Runtime configuration - Updated by AWS App Runner
 window.appConfig = {
-  apiUrl: 'https://91xl0mky4e-vpce-03e2fb9671d9d8aed.execute-api.ap-northeast-1.amazonaws.com/dev',
-  secureLS_Key: 'default-secure-key-change-in-production'
+  apiUrl: 'https://test.api.example.com',
+  environment: 'production',
+  region: 'ap-northeast-1',
+  secureLS_Key: 'test-encryption-key-32-characters-long'
 }
