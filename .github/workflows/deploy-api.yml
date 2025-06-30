@@ -11,7 +11,7 @@ on:
 env:
   AWS_REGION: ap-northeast-1
   SAM_TEMPLATE: api/template.yaml
-  STACK_NAME: nais-auth-api
+  STACK_NAME: nais-api-sam-stack
 
 jobs:
   deploy:
