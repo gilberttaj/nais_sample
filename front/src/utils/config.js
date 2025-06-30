@@ -9,10 +9,18 @@ const isAppRunner = () => {
 }
 
 const getEnvVar = (key) => {
-  // Always use import.meta.env (Vite injects env vars at build time)
   const viteKey = key.startsWith('VITE_') ? key : `VITE_${key}`;
-  console.log(`Accessing import.meta.env.${viteKey} (${isAppRunner() ? 'App Runner' : 'Local'} mode)`);
-  return import.meta.env[viteKey];
+  
+  if (isAppRunner()) {
+    // In App Runner (production), use process.env
+    const processKey = viteKey.replace('VITE_', ''); // Remove VITE_ prefix for process.env
+    console.log(`Accessing process.env.${processKey} (App Runner mode)`);
+    return typeof process !== 'undefined' ? process.env[processKey] : undefined;
+  } else {
+    // In development (Vite), use import.meta.env
+    console.log(`Accessing import.meta.env.${viteKey} (Local mode)`);
+    return import.meta.env[viteKey];
+  }
 }
 
 export const getApiUrl = () => {
@@ -20,9 +28,10 @@ export const getApiUrl = () => {
   const apiUrl = getEnvVar('VITE_API_URL');
   
   if (!apiUrl) {
-    const envMethod = 'import.meta.env.VITE_API_URL';
-    console.error(`VITE_API_URL environment variable is not set! (Using ${envMethod})`);
-    throw new Error(`API URL not configured. Please set VITE_API_URL environment variable. (Environment: ${isAppRunner() ? 'App Runner' : 'Local'})`);
+    const envMethod = isAppRunner() ? 'process.env.API_URL' : 'import.meta.env.VITE_API_URL';
+    const envVarName = isAppRunner() ? 'API_URL' : 'VITE_API_URL';
+    console.error(`${envVarName} environment variable is not set! (Using ${envMethod})`);
+    throw new Error(`API URL not configured. Please set ${envVarName} environment variable. (Environment: ${isAppRunner() ? 'App Runner' : 'Local'})`);
   }
   
   console.log(`API URL detected: ${apiUrl} (${isAppRunner() ? 'App Runner' : 'Local'} mode)`);
@@ -34,9 +43,10 @@ export const getEnvironment = () => {
   const environment = getEnvVar('VITE_APP_ENV');
   
   if (!environment) {
-    const envMethod = 'import.meta.env.VITE_APP_ENV';
-    console.error(`VITE_APP_ENV environment variable is not set! (Using ${envMethod})`);
-    throw new Error(`Environment not configured. Please set VITE_APP_ENV environment variable. (Environment: ${isAppRunner() ? 'App Runner' : 'Local'})`);
+    const envMethod = isAppRunner() ? 'process.env.APP_ENV' : 'import.meta.env.VITE_APP_ENV';
+    const envVarName = isAppRunner() ? 'APP_ENV' : 'VITE_APP_ENV';
+    console.error(`${envVarName} environment variable is not set! (Using ${envMethod})`);
+    throw new Error(`Environment not configured. Please set ${envVarName} environment variable. (Environment: ${isAppRunner() ? 'App Runner' : 'Local'})`);
   }
   
   console.log(`Environment detected: ${environment} (${isAppRunner() ? 'App Runner' : 'Local'} mode)`);
@@ -47,8 +57,11 @@ export const getConfig = (key, fallback = null) => {
   const value = getEnvVar(key);
   
   if (!value && fallback === null) {
-    const envMethod = `import.meta.env.VITE_${key}`;
-    console.error(`${key} environment variable is not set! (Using ${envMethod})`);
+    const viteKey = key.startsWith('VITE_') ? key : `VITE_${key}`;
+    const processKey = viteKey.replace('VITE_', '');
+    const envMethod = isAppRunner() ? `process.env.${processKey}` : `import.meta.env.${viteKey}`;
+    const envVarName = isAppRunner() ? processKey : viteKey;
+    console.error(`${envVarName} environment variable is not set! (Using ${envMethod})`);
   }
   
   return value || fallback;
@@ -59,8 +72,9 @@ export const getSecureKey = () => {
   const key = getEnvVar('VITE_SECURE_LS_KEY');
   
   if (!key) {
-    const envMethod = 'import.meta.env.VITE_SECURE_LS_KEY';
-    console.error(`VITE_SECURE_LS_KEY environment variable is not set! (Using ${envMethod})`);
+    const envMethod = isAppRunner() ? 'process.env.SECURE_LS_KEY' : 'import.meta.env.VITE_SECURE_LS_KEY';
+    const envVarName = isAppRunner() ? 'SECURE_LS_KEY' : 'VITE_SECURE_LS_KEY';
+    console.error(`${envVarName} environment variable is not set! (Using ${envMethod})`);
     return 'test-encryption-key-32-characters-long'; // This one can have a fallback for security
   }
   
