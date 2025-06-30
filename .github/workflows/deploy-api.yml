@@ -1,0 +1,102 @@
+name: Deploy API to AWS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'api/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-northeast-1
+  SAM_TEMPLATE: api/template.yaml
+  STACK_NAME: nais-auth-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Java 11
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'corretto'
+        java-version: '11'
+
+    - name: Setup AWS SAM CLI
+      uses: aws-actions/setup-sam@v2
+      with:
+        use-installer: true
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build SAM application
+      run: |
+        cd api
+        sam build --use-container
+
+    - name: Deploy SAM application
+      run: |
+        cd api
+        sam deploy \
+          --stack-name ${{ env.STACK_NAME }} \
+          --resolve-s3 \
+          --s3-prefix ${{ env.STACK_NAME }} \
+          --region ${{ env.AWS_REGION }} \
+          --capabilities CAPABILITY_IAM \
+          --no-confirm-changeset \
+          --no-fail-on-empty-changeset \
+          --parameter-overrides \
+            Stage=${{ secrets.STAGE || 'dev' }} \
+            VpcId=${{ secrets.VPC_ID }} \
+            SubnetId1=${{ secrets.SUBNET_ID_1 }} \
+            SubnetId2=${{ secrets.SUBNET_ID_2 }} \
+            ApiGatewayVpcEndpointId=${{ secrets.API_GATEWAY_VPC_ENDPOINT_ID }} \
+            CognitoUserPoolId=${{ secrets.COGNITO_USER_POOL_ID }} \
+            CognitoUserPoolClientSecret=${{ secrets.COGNITO_USER_POOL_CLIENT_SECRET }} \
+            CognitoUserPoolClientId=${{ secrets.COGNITO_USER_POOL_CLIENT_ID }} \
+            GoogleClientId=${{ secrets.GOOGLE_CLIENT_ID }} \
+            GoogleClientSecret=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+            AllowedEmailDomains=${{ secrets.ALLOWED_EMAIL_DOMAINS || 'nais.com,company.com' }} \
+            AllowedEmails=${{ secrets.ALLOWED_EMAILS || '' }} \
+            WorkspaceAuthStrict=${{ secrets.WORKSPACE_AUTH_STRICT || 'true' }} \
+            CognitoDomainUrl=${{ secrets.COGNITO_DOMAIN_URL || 'https://nais-stage.auth.ap-northeast-1.amazoncognito.com' }} \
+            DBHost=${{ secrets.DB_HOST || 'localhost' }} \
+            DBPort=${{ secrets.DB_PORT || '5432' }} \
+            DBName=${{ secrets.DB_NAME || 'nais' }} \
+            DBUser=${{ secrets.DB_USER || 'postgres' }} \
+            DBPassword=${{ secrets.DB_PASSWORD || 'password' }} \
+            FrontendUrl=${{ secrets.FRONTEND_URL || 'https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com' }}
+
+    - name: Get API Gateway endpoint
+      run: |
+        cd api
+        ENDPOINT=$(aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseEndpoint`].OutputValue' \
+          --output text)
+        echo "API Endpoint: $ENDPOINT"
+        echo "ENDPOINT=$ENDPOINT" >> $GITHUB_ENV
+
+    - name: Test API health check
+      run: |
+        if [ ! -z "$ENDPOINT" ]; then
+          curl -f "$ENDPOINT/auth/health" || echo "Health check failed, but deployment completed"
+        fi

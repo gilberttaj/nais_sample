@@ -1,0 +1,55 @@
+{
+  "_instructions": {
+    "description": "SAM Deploy Parameters Configuration",
+    "usage": [
+      "1. Update all placeholder values below with your actual AWS resources",
+      "2. Run: sam build",
+      "3. Run: sam deploy --guided --parameter-overrides file://sam-deploy-parameters.json",
+      "4. Alternatively run: sam deploy --stack-name your-stack-name --parameter-overrides $(cat sam-deploy-parameters.json | jq -r 'to_entries[] | select(.key != \"_instructions\") | \"\\(.key)=\\(.value)\"' | tr '\\n' ' ')"
+    ],
+    "required_updates": {
+      "VpcId": "Your AWS VPC ID (e.g., vpc-1234567890abcdef0)",
+      "SubnetId1": "First private subnet ID (e.g., subnet-1234567890abcdef0)",
+      "SubnetId2": "Second private subnet ID (e.g., subnet-0987654321fedcba0)",
+      "ApiGatewayVpcEndpointId": "VPC Endpoint ID for API Gateway (e.g., vpce-1234567890abcdef0)",
+      "CognitoUserPoolId": "Cognito User Pool ID (e.g., ap-northeast-1_123456789)",
+      "CognitoUserPoolClientSecret": "Cognito App Client Secret (obtain from AWS Console)",
+      "CognitoUserPoolClientId": "Cognito App Client ID (obtain from AWS Console)",
+      "GoogleClientId": "Google OAuth Client ID (from Google Cloud Console)",
+      "GoogleClientSecret": "Google OAuth Client Secret (from Google Cloud Console)"
+    },
+    "optional_updates": {
+      "Stage": "Deployment stage (dev/staging/prod)",
+      "AllowedEmailDomains": "Comma-separated list of allowed email domains",
+      "AllowedEmails": "Comma-separated list of specific allowed emails (optional)",
+      "WorkspaceAuthStrict": "Enable strict workspace auth (true/false)",
+      "CognitoDomainUrl": "Update with your actual Cognito domain URL",
+      "DBHost": "Database host (if using RDS)",
+      "DBPort": "Database port",
+      "DBName": "Database name",
+      "DBUser": "Database username",
+      "DBPassword": "Database password",
+      "FrontendUrl": "Your frontend application URL"
+    }
+  },
+  "Stage": "dev",
+  "VpcId": "vpc-xxxxxxxxx",
+  "SubnetId1": "subnet-xxxxxxxxx", 
+  "SubnetId2": "subnet-xxxxxxxxx",
+  "ApiGatewayVpcEndpointId": "vpce-xxxxxxxxx",
+  "CognitoUserPoolId": "ap-northeast-1_xxxxxxxxx",
+  "CognitoUserPoolClientSecret": "your-cognito-client-secret",
+  "CognitoUserPoolClientId": "your-cognito-client-id",
+  "GoogleClientId": "your-google-client-id",
+  "GoogleClientSecret": "your-google-client-secret",
+  "AllowedEmailDomains": "nais.com,company.com",
+  "AllowedEmails": "",
+  "WorkspaceAuthStrict": "true",
+  "CognitoDomainUrl": "https://nais-stage.auth.ap-northeast-1.amazoncognito.com",
+  "DBHost": "localhost",
+  "DBPort": "5432",
+  "DBName": "nais",
+  "DBUser": "postgres",
+  "DBPassword": "password",
+  "FrontendUrl": "https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com"
+}
