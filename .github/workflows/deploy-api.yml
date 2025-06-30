@@ -89,7 +89,7 @@ jobs:
         ENDPOINT=$(aws cloudformation describe-stacks \
           --stack-name ${{ env.STACK_NAME }} \
           --region ${{ env.AWS_REGION }} \
-          --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseEndpoint`].OutputValue' \
+          --query "Stacks[0].Outputs[?OutputKey=='ApiBaseEndpoint'].OutputValue" \
           --output text)
         echo "API Endpoint: $ENDPOINT"
         echo "ENDPOINT=$ENDPOINT" >> $GITHUB_ENV
