@@ -74,7 +74,6 @@ jobs:
             GoogleClientId=${{ secrets.GOOGLE_CLIENT_ID }} \
             GoogleClientSecret=${{ secrets.GOOGLE_CLIENT_SECRET }} \
             AllowedEmailDomains=${{ secrets.ALLOWED_EMAIL_DOMAINS || 'nais.com,company.com' }} \
-            AllowedEmails=${{ secrets.ALLOWED_EMAILS || '' }} \
             WorkspaceAuthStrict=${{ secrets.WORKSPACE_AUTH_STRICT || 'true' }} \
             CognitoDomainUrl=${{ secrets.COGNITO_DOMAIN_URL || 'https://nais-stage.auth.ap-northeast-1.amazoncognito.com' }} \
             DBHost=${{ secrets.DB_HOST || 'localhost' }} \
@@ -82,7 +81,7 @@ jobs:
             DBName=${{ secrets.DB_NAME || 'nais' }} \
             DBUser=${{ secrets.DB_USER || 'postgres' }} \
             DBPassword=${{ secrets.DB_PASSWORD || 'password' }} \
-            FrontendUrl=${{ secrets.FRONTEND_URL || 'https://vzxbmw2j9r.ap-northeast-1.awsapprunner.com' }}
+            FrontendUrl=${{ secrets.FRONTEND_URL || 'https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com' }}
 
     - name: Get API Gateway endpoint
       run: |

@@ -35,7 +35,6 @@ You must configure the following secrets in your GitHub repository settings (`Se
 
 - `STAGE` - Deployment stage (default: 'dev')
 - `ALLOWED_EMAIL_DOMAINS` - Comma-separated allowed domains (default: 'nais.com,company.com')
-- `ALLOWED_EMAILS` - Comma-separated specific allowed emails (default: '')
 - `WORKSPACE_AUTH_STRICT` - Enable strict workspace auth (default: 'true')
 - `COGNITO_DOMAIN_URL` - Cognito domain URL (default: 'https://nais-stage.auth.ap-northeast-1.amazoncognito.com')
 - `DB_HOST` - Database host (default: 'localhost')
@@ -94,11 +93,34 @@ Check deployment status:
 - **AWS CloudFormation**: Check stack deployment status
 - **CloudWatch Logs**: Monitor Lambda function logs
 
+## Email Management
+
+**Individual Email Management:**
+After deployment, you can manage allowed emails directly in AWS:
+
+1. **Via AWS Secrets Manager Console:**
+   - Go to AWS Secrets Manager
+   - Find secret: `{stage}-nais-auth-secrets-{stack-name}`
+   - Edit secret and add `"allowed_emails": "user1@domain.com,user2@domain.com"`
+   - Changes take effect on next Lambda invocation
+
+2. **Via AWS CLI:**
+   ```bash
+   # Get current secret
+   aws secretsmanager get-secret-value --secret-id "dev-nais-auth-secrets-your-stack"
+   
+   # Update with new emails
+   aws secretsmanager update-secret --secret-id "dev-nais-auth-secrets-your-stack" \
+     --secret-string '{"client_secret":"...","allowed_emails":"user1@domain.com,user2@domain.com",...}'
+   ```
+
+**Important:** Manual email changes in AWS Secrets Manager will **NOT** be overwritten by future deployments. Only domain settings from GitHub secrets will be updated.
+
 ## Troubleshooting
 
 Common issues:
 1. **Missing secrets**: Ensure all required secrets are configured
-2. **S3 bucket access**: Verify SAM deployment bucket exists and is accessible
-3. **IAM permissions**: Ensure GitHub Actions user has sufficient permissions
-4. **VPC configuration**: Verify VPC and subnet IDs are correct
-5. **Resource limits**: Check AWS service limits if deployment fails
+2. **IAM permissions**: Ensure GitHub Actions user has sufficient permissions
+3. **VPC configuration**: Verify VPC and subnet IDs are correct
+4. **Resource limits**: Check AWS service limits if deployment fails
+5. **Email access denied**: Check AWS Secrets Manager for allowed emails configuration

@@ -70,10 +70,6 @@ Parameters:
     Description: List of allowed email domains for workspace authentication (e.g., nais.com,subsidiary.com)
     Default: "nais.com,company.com"
 
-  AllowedEmails:
-    Type: CommaDelimitedList
-    Description: List of individual allowed email addresses (optional)
-    Default: ""
 
   WorkspaceAuthStrict:
     Type: String
@@ -120,7 +116,6 @@ Parameters:
 
 Conditions:
   IsProduction: !Equals [!Ref Stage, "prod"]
-  HasAllowedEmails: !Not [!Equals [!Join ["", !Ref AllowedEmails], ""]]
 
 Resources:
   # ========================================
@@ -141,14 +136,9 @@ Resources:
             "auth_library_version": "2.1.0",
             "stage": "${Stage}",
             "workspace_auth_enabled": "${WorkspaceAuthStrict}",
-            "allowed_domains": "${DomainsString}",
-            "allowed_emails": "${EmailsString}"
+            "allowed_domains": "${DomainsString}"
           }
         - DomainsString: !Join [",", !Ref AllowedEmailDomains]
-          EmailsString: !If 
-            - HasAllowedEmails
-            - !Join [",", !Ref AllowedEmails]
-            - ""
       Tags:
         - Key: Application
           Value: Nais
@@ -260,10 +250,6 @@ Resources:
           # Workspace Authentication Configuration
           WORKSPACE_AUTH_ENABLED: !Ref WorkspaceAuthStrict
           ALLOWED_EMAIL_DOMAINS: !Join [",", !Ref AllowedEmailDomains]
-          ALLOWED_EMAILS: !If 
-            - HasAllowedEmails
-            - !Join [",", !Ref AllowedEmails]
-            - ""
           
           # Database Configuration (retained from original)
           DB_URL: !Sub 'jdbc:postgresql://${DBHost}:${DBPort}/${DBName}'
