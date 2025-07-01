@@ -16,7 +16,7 @@ app.get('/api/config', (req, res) => {
   const config = {
     apiUrl: process.env.VITE_API_URL || 'http://localhost:3000/api',
     secureLsKey: process.env.VITE_SECURE_LS_KEY || 'development-encryption-key-32-chars-minimum',
-    appName: process.env.VITE_APP_NAME || 'NAIS Application',
+    appName: process.env.VITE_APP_NAME || 'NAIS Application tEST',
     appVersion: process.env.VITE_APP_VERSION || '1.0.0',
     environment: process.env.VITE_APP_ENV || 'production'
   };
