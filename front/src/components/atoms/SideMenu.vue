@@ -97,7 +97,7 @@ const menuItems = ref([
   { id: 'dashboard', label: 'ダッシュボード', icon: 'fas fa-home', url: '/' },
   { id: 'email-master', label: 'メール宛先マスター', icon: 'fas fa-envelope', url: '/list' },
   { id: 'list', label: '宛先一覧', icon: 'fas fa-list', url: '/address' },
-  { id: 'new', label: '新規登録', icon: 'fas fa-plus-circle', url: '/new' },
+  { id: 'new', label: '新規登録', icon: 'fas fa-plus-circle', url: '/register' },
   { id: 'search', label: '検索', icon: 'fas fa-search', url: '/search' }
 ])
 

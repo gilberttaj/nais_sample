@@ -94,7 +94,7 @@
         </div>
 
         <!-- Data Table -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-6 mb-6">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
             <div>
               <h3 class="text-lg font-semibold text-gray-800">登録データ一覧</h3>
@@ -103,6 +103,13 @@
               </p>
             </div>
             <div class="flex items-center gap-2 mt-4 sm:mt-0">
+              <button 
+                class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-white bg-gradient-to-br from-[#667eea] to-[#764ba2] shadow-md hover:-translate-y-0.5 hover:shadow-lg"
+                @click="router.push('/register')"
+              >
+                <i class="fas fa-plus mr-2"></i>
+                新規登録
+              </button>
               <span class="text-sm text-gray-500">表示件数:</span>
               <select 
                 v-model="pagination.perPage" 
@@ -112,6 +119,7 @@
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
+                <option value="100">100</option>
               </select>
             </div>
           </div>
@@ -128,21 +136,14 @@
                       @change="toggleSelectAll"
                     >
                   </th>
-                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">
-                    業務ID
-                  </th>
-                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">
-                    業務名
-                  </th>
-                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">
-                    事業所
-                  </th>
-                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">
-                    ステータス
-                  </th>
-                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">
-                    アクション
-                  </th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">業務ID</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">業務名</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">事業所名</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">得意先名</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">送信モード</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">ステータス</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">最終更新</th>
+                  <th class="bg-slate-50 px-3 py-4 text-left font-semibold text-sm text-gray-700 border-b border-gray-200">アクション</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,44 +164,44 @@
                   <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">
                     <span class="font-mono font-semibold">{{ item.businessId }}</span>
                   </td>
+                  <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">{{ item.businessName }}</td>
+                  <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">{{ item.officeName }}</td>
+                  <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">{{ item.clientName }}</td>
                   <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">
-                    {{ item.businessName }}
-                  </td>
-                  <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">
-                    {{ item.office }}
+                    <span :class="getSendModeClass(item.sendMode)">
+                      <i :class="getSendModeIcon(item.sendMode)" class="mr-1"></i>
+                      {{ item.sendMode }}
+                    </span>
                   </td>
                   <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">
                     <span :class="[
                       'inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide border',
-                      item.status === 'active' 
+                      item.isActive 
                         ? 'bg-green-100 text-green-600 border-green-200' 
                         : 'bg-red-100 text-red-600 border-red-200'
                     ]">
-                      <i :class="[
-                        'mr-1',
-                        item.status === 'active' ? 'fas fa-check-circle' : 'fas fa-times-circle'
-                      ]"></i>
-                      {{ item.status === 'active' ? 'アクティブ' : '非アクティブ' }}
+                      {{ item.isActive ? 'アクティブ' : '非アクティブ' }}
                     </span>
                   </td>
+                  <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">{{ formatDate(item.lastUpdated) }}</td>
                   <td class="px-3 py-4 border-b border-gray-100 text-sm text-gray-900">
                     <div class="flex gap-2">
                       <button 
-                        class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:-translate-y-0.5 hover:shadow-md"
-                        @click.stop="viewItem(item.id)"
+                        class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:-translate-y-0.5"
+                        @click.stop="viewDetail(item.id)"
                         title="詳細表示"
                       >
                         <i class="fas fa-eye"></i>
                       </button>
                       <button 
-                        class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white shadow-sm hover:-translate-y-0.5 hover:shadow-md"
+                        class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white shadow-sm hover:-translate-y-0.5"
                         @click.stop="editItem(item.id)"
                         title="編集"
                       >
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button
-                        class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 bg-red-500 text-white shadow-sm hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-md"
+                      <button 
+                        class="inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 bg-red-500 text-white shadow-sm hover:bg-red-600 hover:-translate-y-0.5"
                         @click.stop="deleteItem(item.id)"
                         title="削除"
                       >
@@ -220,7 +221,7 @@
             </div>
             <div class="flex items-center gap-1">
               <button 
-                class="px-3 py-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-3 py-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-md transition-all duration-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="changePage(pagination.currentPage - 1)"
                 :disabled="pagination.currentPage === 1"
               >
@@ -230,17 +231,18 @@
                 v-for="page in visiblePages" 
                 :key="page"
                 :class="[
-                  'px-3 py-2 text-sm border rounded-md cursor-pointer transition-all duration-200',
+                  'px-3 py-2 text-sm border rounded-md transition-all duration-200',
                   page === pagination.currentPage 
                     ? 'bg-indigo-500 text-white border-indigo-500' 
-                    : 'text-gray-500 bg-white border-gray-200 hover:bg-gray-100 hover:text-gray-700'
+                    : 'text-gray-500 bg-white border-gray-200 hover:bg-gray-100'
                 ]"
                 @click="changePage(page)"
               >
                 {{ page }}
               </button>
+              <span v-if="showEllipsis" class="px-2 text-gray-500">...</span>
               <button 
-                class="px-3 py-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-3 py-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-md transition-all duration-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="changePage(pagination.currentPage + 1)"
                 :disabled="pagination.currentPage === totalPages"
               >
@@ -339,13 +341,27 @@ interface Pagination {
   perPage: number
 }
 
+interface Stat {
+  id: string
+  label: string
+  value: number
+  gradient: string
+}
+
 const sidebarVisible = ref(true)
 const activeMenu = ref('dashboard')
 const selectedItems = ref<string[]>([])
 
-const user = reactive<User>({
-  name: '管理者',
-  role: 'システム管理者'
+const filters = reactive({
+  search: '',
+  office: '',
+  sendMode: '',
+  status: ''
+})
+
+const pagination = reactive({
+  currentPage: 1,
+  perPage: 10
 })
 
 const stats = ref<Stat[]>([
@@ -355,33 +371,77 @@ const stats = ref<Stat[]>([
   { id: 'updated', label: '今月更新', value: 23, gradient: 'bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed]' }
 ])
 
-const filters = reactive<Filters>({
-  search: '',
-  office: '',
-  status: '',
-  type: ''
-})
 
-const pagination = reactive<Pagination>({
-  currentPage: 1,
-  perPage: 10
-})
-
-const tableData = ref<DataItem[]>([
-  { id: '1', businessId: 'psurm22a', businessName: '請求合計表 日酒販', office: '広域卸営業部', status: 'active' },
-  { id: '2', businessId: 'psurm23b', businessName: '請求書送付 東京支店', office: '東京営業部', status: 'active' },
-  { id: '3', businessId: 'psurm24c', businessName: '月次レポート 大阪', office: '大阪営業部', status: 'inactive' },
-  { id: '4', businessId: 'psurm25d', businessName: '在庫報告書 九州', office: '九州営業部', status: 'active' },
-  { id: '5', businessId: 'psurm26e', businessName: '売上実績 北海道', office: '北海道営業部', status: 'active' }
+const menuItems = ref([
+  { id: 'dashboard', label: 'ダッシュボード', icon: 'fas fa-home' },
+  { id: 'email-master', label: 'メール宛先マスター', icon: 'fas fa-envelope' },
+  { id: 'list', label: '宛先一覧', icon: 'fas fa-list' },
+  { id: 'new', label: '新規登録', icon: 'fas fa-plus-circle' },
+  { id: 'search', label: '検索', icon: 'fas fa-search' }
 ])
 
-const pageTitle = computed(() => {
-  const item = [...menuItems.value, ...settingsItems.value].find(item => item.id === activeMenu.value)
-  return item ? item.label : 'ダッシュボード'
-})
+const settingsItems = ref([
+  { id: 'settings', label: 'システム設定', icon: 'fas fa-cog' },
+  { id: 'users', label: 'ユーザー管理', icon: 'fas fa-users' },
+  { id: 'reports', label: 'レポート', icon: 'fas fa-chart-bar' }
+])
+
+// Updated email data to match the original HTML exactly
+const emailData = ref([
+  {
+    id: '1',
+    businessId: 'psurm22a',
+    businessName: '請求合計表 日酒販',
+    officeName: '広域卸営業部',
+    clientName: '千葉県酒類販売',
+    sendMode: 'MPDF',
+    isActive: true,
+    lastUpdated: new Date('2024-01-15')
+  },
+  {
+    id: '2',
+    businessId: 'psurm23b',
+    businessName: '請求書送付 東京支店',
+    officeName: '東京営業部',
+    clientName: '東京酒類卸売',
+    sendMode: 'ZIP',
+    isActive: true,
+    lastUpdated: new Date('2024-01-14')
+  },
+  {
+    id: '3',
+    businessId: 'psurm24c',
+    businessName: '月次レポート 大阪',
+    officeName: '大阪営業部',
+    clientName: '関西酒類販売',
+    sendMode: 'TXT',
+    isActive: false,
+    lastUpdated: new Date('2024-01-13')
+  },
+  {
+    id: '4',
+    businessId: 'psurm25d',
+    businessName: '在庫報告書 九州',
+    officeName: '九州営業部',
+    clientName: '九州酒類流通',
+    sendMode: 'MPDF',
+    isActive: true,
+    lastUpdated: new Date('2024-01-12')
+  },
+  {
+    id: '5',
+    businessId: 'psurm26e',
+    businessName: '売上実績 北海道',
+    officeName: '北海道営業部',
+    clientName: '北海道酒類商社',
+    sendMode: 'ZIP',
+    isActive: true,
+    lastUpdated: new Date('2024-01-11')
+  }
+])
 
 const filteredData = computed(() => {
-  let data = tableData.value
+  let data = emailData.value
 
   if (filters.search) {
     data = data.filter(item => 
@@ -391,11 +451,16 @@ const filteredData = computed(() => {
   }
 
   if (filters.office) {
-    data = data.filter(item => item.office.includes(filters.office))
+    data = data.filter(item => item.officeName.includes(filters.office))
+  }
+
+  if (filters.sendMode) {
+    data = data.filter(item => item.sendMode === filters.sendMode)
   }
 
   if (filters.status) {
-    data = data.filter(item => item.status === filters.status)
+    const isActive = filters.status === 'active'
+    data = data.filter(item => item.isActive === isActive)
   }
 
   return data
@@ -420,16 +485,20 @@ const visiblePages = computed(() => {
   const maxVisible = 5
   let start = Math.max(1, pagination.currentPage - Math.floor(maxVisible / 2))
   let end = Math.min(totalPages.value, start + maxVisible - 1)
-  
+
   if (end - start + 1 < maxVisible) {
     start = Math.max(1, end - maxVisible + 1)
   }
-  
+
   for (let i = start; i <= end; i++) {
     pages.push(i)
   }
-  
+
   return pages
+})
+
+const showEllipsis = computed(() => {
+  return totalPages.value > 5 && pagination.currentPage < totalPages.value - 2
 })
 
 const allSelected = computed(() => {
@@ -440,12 +509,13 @@ const toggleSidebar = () => {
   sidebarVisible.value = !sidebarVisible.value
 }
 
-const setActiveMenu = (menuId: string) => {
+const setActiveMenu = (menuId) => {
   activeMenu.value = menuId
+  console.log(`Navigate to: ${menuId}`)
 }
 
 const createNew = () => {
-  console.log('Create new')
+  console.log('Create new record')
   alert('新規登録画面に移動します')
 }
 
@@ -456,17 +526,12 @@ const logout = () => {
   }
 }
 
-const viewStat = (statId: string) => {
-  console.log(`View stat: ${statId}`)
-  alert(`統計詳細: ${statId}`)
-}
-
-const exportData = () => {
-  console.log('Export data')
+const exportCSV = () => {
+  console.log('Export CSV')
   alert('CSV出力を開始します')
 }
 
-const printData = () => {
+const printList = () => {
   window.print()
 }
 
@@ -478,17 +543,9 @@ const updatePagination = () => {
   pagination.currentPage = 1
 }
 
-const changePage = (page: number) => {
+const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     pagination.currentPage = page
-  }
-}
-
-const toggleSelectAll = () => {
-  if (allSelected.value) {
-    selectedItems.value = []
-  } else {
-    selectedItems.value = paginatedData.value.map(item => item.id)
   }
 }
 
@@ -548,6 +605,41 @@ const handleClickOutside = (event: Event) => {
       sidebarVisible.value) {
     sidebarVisible.value = false
   }
+}
+
+const getSendModeClass = (mode) => {
+  const baseClass = 'inline-flex items-center px-2 py-1 text-xs font-medium rounded-full'
+  switch (mode) {
+    case 'MPDF':
+      return `${baseClass} bg-red-100 text-red-800`
+    case 'ZIP':
+      return `${baseClass} bg-blue-100 text-blue-800`
+    case 'TXT':
+      return `${baseClass} bg-green-100 text-green-800`
+    default:
+      return `${baseClass} bg-gray-100 text-gray-800`
+  }
+}
+
+const getSendModeIcon = (mode) => {
+  switch (mode) {
+    case 'MPDF':
+      return 'fas fa-file-pdf'
+    case 'ZIP':
+      return 'fas fa-file-zip'
+    case 'TXT':
+      return 'fas fa-file-alt'
+    default:
+      return 'fas fa-file'
+  }
+}
+
+const formatDate = (date) => {
+  return date.toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 onMounted(() => {
