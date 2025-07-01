@@ -2,47 +2,14 @@
         <!-- Page Content -->
       <main class="flex-1 overflow-y-auto">
         <!-- Email Master Form (PDF送信マスタ) -->
-        <div v-if="activeMenu === 'email-master'" class="px-6" >
-          <div class="pr-6 pb-4">
-            <h2 class="text-lg font-semibold text-gray-400">
-              登録完了
-            </h2>
-          </div>
-
-          <!-- User Info Section -->
-          <!-- <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
-            <div class="bg-blue-900 text-white p-4 rounded-lg mb-6 xl:w-[93%]">
-              <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-6">
-                  <div>
-                    <span class="text-sm opacity-75">ユーザー:</span>
-                    <span class="ml-2 font-medium">{{ currentUser.name }}</span>
-                  </div>
-                  <div>
-                    <span class="text-sm opacity-75">最終ログイン:</span>
-                    <span class="ml-2">{{ formatDateTime(currentUser.lastLogin) }}</span>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-6">
-                  <div>
-                    <span class="text-sm opacity-75">実行ユーザー:</span>
-                    <span class="ml-2 font-medium">{{ currentUser.executionUser }}</span>
-                  </div>
-                  <div>
-                    <span class="text-sm opacity-75">実行時刻:</span>
-                    <span class="ml-2">{{ formatDateTime(new Date()) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div> -->
+        <div v-if="activeMenu === 'email-master'" class="p-6" >
 
           <!-- Main Form -->
           <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
             <!-- <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] xl:w-1/5">
               dfdfd
             </div> -->
-            <div class="rounded-2xl bg-white border-b border-gray-200 shadow-lg xl:w-[93%]">
+            <div class="rounded-2xl bg-white border-b border-gray-200 shadow-lg xl:w-[93%] mx-auto">
               <div class="p-6 mt-2">
                 <RegisterCompletion/>
               </div>

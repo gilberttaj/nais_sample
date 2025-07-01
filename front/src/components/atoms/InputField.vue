@@ -1,8 +1,10 @@
 <template>
-  <div class="input-container">
-    <label v-if="label" :for="id" class="input-label">
-      {{ label }} {{ required ? '*' : '' }}
+  <div class="mb-4">
+    <label v-if="label" :for="id" class="form-label ml-2">
+      <i :class="icon"></i>
+      {{ label }} <span v-if="required" class="ml-2 text-red-500">*</span>
     </label>
+
     <div class="relative">
       <input
         :id="id"
@@ -12,17 +14,21 @@
         :placeholder="placeholder"
         :required="required"
         :class="[
-          'input-field',
-          error ? 'input-error' : ''
+          'w-full py-3 px-4 text-sm text-gray-900 bg-white border-2 border-gray-200 rounded-lg shadow-sm transition-all',
+          'hover:border-gray-300',
+          error ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : 'focus:border-indigo-500 focus:ring-indigo-100',
+          'focus:outline-none focus:ring-4'
         ]"
       />
-      <div v-if="type === 'password'" class="password-toggle">
-        <span @click="$emit('toggle-password')" class="toggle-icon">
+
+      <div v-if="type === 'password'" class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer">
+        <span @click="$emit('toggle-password')" class="text-gray-500">
           <slot name="icon"></slot>
         </span>
       </div>
     </div>
-    <p v-if="error" class="error-message">{{ error }}</p>
+
+    <p v-if="error" class="mt-1 text-sm text-red-500">{{ error }}</p>
   </div>
 </template>
 
@@ -33,6 +39,10 @@ defineProps({
     required: true
   },
   label: {
+    type: String,
+    default: ''
+  },
+  icon: {
     type: String,
     default: ''
   },
@@ -61,32 +71,26 @@ defineProps({
 defineEmits(['update:modelValue', 'toggle-password']);
 </script>
 
-<style scoped lang="postcss">
-.input-container {
-  @apply mb-4;
-}
+<style scoped>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
-.input-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
-}
+  * {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
 
-.input-field {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary;
-}
+  .form-label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+  }
 
-.input-error {
-  @apply border-red-500 focus:ring-red-500;
-}
-
-.password-toggle {
-  @apply absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer;
-}
-
-.toggle-icon {
-  @apply text-gray-500;
-}
-
-.error-message {
-  @apply mt-1 text-sm text-red-500;
-}
+  .form-label i {
+    margin-right: 8px;
+    color: #6b7280;
+    width: 16px;
+  }
 </style>

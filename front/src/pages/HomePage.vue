@@ -1,8 +1,8 @@
 <template>
         <!-- Page Content -->
-      <main class="flex-1 overflow-y-auto px-6 py-12">
-        <!-- Email Master Form -->
-        <div v-if="activeMenu === 'email-master'" class="px-6" >
+      <main class="flex-1 overflow-y-auto">
+        <!-- Dashboard -->
+        <div v-if="activeMenu === 'dashboard'" class="p-6" >
 
 
           <!-- Main Form -->
@@ -10,10 +10,8 @@
             <!-- <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] xl:w-1/5">
               dfdfd
             </div> -->
-            <div class="rounded-2xl bg-white border-b border-gray-200 shadow-lg xl:w-[95%]">
-              <div class="py-6 mt-2">
-                <HomeList/>
-              </div>
+            <div class="xl:w-[95%] mx-auto">
+              <HomeList/>
             </div>
           </div>
         </div>
@@ -35,7 +33,7 @@ import HomeList from '@/components/organisms/HomeList.vue'
 // Reactive data
 const loading = ref(false)
 const selectedEmails = ref([])
-const activeMenu = ref('email-master')
+const activeMenu = ref('dashboard')
 const searchQuery = ref('')
 
 const currentUser = reactive({
@@ -86,7 +84,14 @@ const setActiveMenu = (menu) => {
 
 const getMenuTitle = (menu) => {
   const titles = {
+    'dashboard': 'ダッシュボード',
     'email-master': 'メール宛先マスター',
+    'list': '宛先一覧',
+    'new': '新規登録',
+    'search': '検索',
+    'settings': 'システム設定',
+    'users': 'ユーザー管理',
+    'reports': 'レポート'
   }
   return titles[menu] || 'ページ'
 }

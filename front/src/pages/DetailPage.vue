@@ -3,23 +3,11 @@
       <main class="flex-1 overflow-y-auto">
         <!-- Email Master Form (PDF送信マスタ) -->
         <div v-if="activeMenu === 'email-master'" class="p-6" >
-          <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
-            <!-- Blue Header -->
-            <div class="bg-blue-400 text-center text-white p-4 rounded-lg mb-6 xl:w-[95%]">
-              <h1 class="text-xl font-bold items-center text-white">請求書PDF送信マスタ</h1>
-            </div>
-          </div>
-
 
           <!-- Main Form -->
           <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
-            <!-- <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] xl:w-1/5">
-              dfdfd
-            </div> -->
-            <div class="rounded-2xl bg-white border-b border-gray-200 shadow-lg xl:w-[95%]">
-              <div class="p-6 mt-2">
-                <DetailDisplay/>
-              </div>
+            <div class="xl:w-[93%] mx-auto">
+              <DetailDisplay/>
             </div>
           </div>
         </div>

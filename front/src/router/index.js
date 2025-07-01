@@ -52,19 +52,19 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/register/edit/:id',
+    path: '/detail/edit/:id',
     name: 'RegisterEditPage',
     component: RegisterEditPage,
     meta: { requiresAuth: true }
   },
   {
-    path: '/register/edit/confirmation',
+    path: '/detail/edit/confirmation',
     name: 'RegisterEditConfirmationPage',
     component: RegisterEditConfirmationPage,
     meta: { requiresAuth: true }
   },
   {
-    path: '/register/edit/complete',
+    path: '/detail/edit/complete',
     name: 'RegisterEditCompletePage',
     component: RegisterEditCompletePage,
     meta: { requiresAuth: true }

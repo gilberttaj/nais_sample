@@ -1,401 +1,545 @@
 <template>
-    <form @submit.prevent="handleSubmit">
-        <!-- Loading State -->
-        <div v-if="loading" class="flex justify-center items-center py-12">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="ml-3 text-gray-600">処理中...</span>
-        </div>
+  <div class="">
+    <div class="">
+      
+      <!-- Breadcrumb -->
+      <nav class="flex items-center mb-6 text-sm text-gray-500">
+        <a 
+          href="#" 
+          @click="navigateToList"
+          class="text-[#667eea] hover:text-indigo-800 transition-colors duration-200 no-underline"
+        >
+          <i class="fas fa-home mr-2"></i>ホーム
+        </a>
+        <span class="mx-3 text-gray-300">
+          <i class="fas fa-chevron-right"></i>
+        </span>
+        <a 
+          href="#" 
+          @click="navigateToList"
+          class="text-[#667eea] hover:text-indigo-800 transition-colors duration-200 no-underline"
+        >
+          メール宛先マスター
+        </a>
+        <span class="mx-3 text-gray-300">
+          <i class="fas fa-chevron-right"></i>
+        </span>
+        <a 
+          class="text-[#667eea] font-medium cursor-pointer" 
+          @click="router.back()"
+        >
+          詳細表示
+        </a>
+        <span class="mx-3 text-gray-300">
+          <i class="fas fa-chevron-right"></i>
+        </span>
+        <span class="text-gray-900 font-medium">編集</span>
+      </nav>
 
-        <!-- Form Fields -->
-        <div v-else class="space-y-8">
-                <!-- Business ID Section -->
-            <div class="px-6 space-y-6">
-                <div class="space-x-4 gap-6">
-                    <div class="flex items-center">
-                        <div class="w-[21%]">
-                            <InputField
-                                id="businessId"
-                                label="業務ID"
-                                v-model="businessId"
-                                type="text"
-                                placeholder="Enter your 業務ID"
-                                :required="false"
-                                :error="idError"
-                            />
-                        </div>
-                        <label class="text-xs font-medium text-gray-700 ml-4">
-                            請求合計表　日酒販
-                        </label>
-                    </div>
-                </div>
-                <hr class="border-orange-100">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                    <div class="flex items-center">
-                        <div class="w-[66%]">
-                            <InputField
-                                id="businessOfficeCode"
-                                label="事業所"
-                                v-model="businessOfficeCode"
-                                type="text"
-                                placeholder="Enter your 事業所"
-                                :required="false"
-                                :error="businessOfficeCodeError"
-                            />
-                        </div>
-                        <label class="text-xs font-medium text-gray-700 ml-4">
-                            {{ businessOfficeName }}
-                        </label>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-[66%]">
-                            <InputField
-                                id="customerCode"
-                                label="得意先"
-                                v-model="customerCode"
-                                type="text"
-                                placeholder="Enter your 得意先"
-                                :required="false"
-                                :error="customerCodeError"
-                            />
-                        </div>
-                        <label class="text-xs font-medium text-gray-700 ml-4">
-                            千葉県酒類販売
-                        </label>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-[69%]">
-                            <InputField
-                                id="chainStoreName"
-                                label="チェーン店"
-                                v-model="chainStoreName"
-                                type="text"
-                                placeholder="Enter your チェーン店"
-                                :required="false"
-                                :error="chainStoreNameError"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-orange-100">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Supplier -->
-                    <div class="space-y-3 w-[92%]">
-                        <TextArea
-                            v-model="supplier"
-                            label="仕入先"
-                            placeholder="仕入先情報を入力してください"
-                            :rows="4"
-                            :error="supplierError"
-                        />
-                    </div>
-                    <!-- Order Destination -->
-                    <div class="space-y-3 w-[92%]">
-                        <TextArea
-                            v-model="orderDestination"
-                            label="仕入先"
-                            placeholder="発注先設者情報を入力してください"
-                            :rows="4"
-                            :error="orderDestinationError"
-                        />
-                    </div>
-                </div>
-                <hr class="border-orange-100">
-                <div class="space-y-3">
-                    <div class="flex items-center w-full">
-                        <div class="w-[30%]">
-                            <InputField
-                                id="extendedDistributionCode"
-                                label="拡張振分コード"
-                                v-model="extendedDistributionCode"
-                                type="text"
-                                placeholder="拡張振分コードを入力してください"
-                                :required="false"
-                                :error="extendedDistributionCodeError"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-blue-100">
+      <!-- Header Card -->
+      <div class="bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white rounded-2xl p-8 mb-8 shadow-2xl shadow-indigo-500/30">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mr-6">
+              <i class="fas fa-envelope-circle-check text-2xl text-white"></i>
             </div>
-                <!-- Email Configuration -->
-            <div class="px-6 space-y-6">
-                <!-- First Row: Destination Name and Transmission Mode -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="destinationName"
-                                label="送信先名称"
-                                v-model="destinationName"
-                                type="text"
-                                placeholder="Enter your 事業所"
-                                :required="false"
-                                :error="destinationNameError"
-                            />
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <SelectBox
-                                v-model="transmissionMode"
-                                label="送信モード"
-                                :options="transmissionModes"
-                                placeholder="送信モード"
-                                required
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-blue-200">
-                <!-- Second Row: Search File Name and Search Directory -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="searchFileName"
-                                label="検索ファイル名"
-                                v-model="searchFileName"
-                                type="text"
-                                placeholder="検索ファイル名を入力してください"
-                                :required="false"
-                                :error="searchFileNameError"
-                            />
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="searchDirectory"
-                                label="検索ディレクトリ"
-                                v-model="searchDirectory"
-                                type="text"
-                                placeholder="検索ディレクトリを入力してください"
-                                :required="false"
-                                :error="searchDirectoryError"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-blue-200">
-                <!-- Third Row: Transmission Directory and Mail Title -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="transmissionDirectory"
-                                label="送信ディレクトリ"
-                                v-model="transmissionDirectory"
-                                type="text"
-                                placeholder="送信ディレクトリを入力してください"
-                                :required="false"
-                                :error="transmissionDirectoryError"
-                            />
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="mailTitle"
-                                label="メールタイトル"
-                                v-model="mailTitle"
-                                type="text"
-                                placeholder="メールタイトルを入力してください"
-                                :required="false"
-                                :error="mailTitleError"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-blue-200">
-                <!-- Fourth Row: Body File Path and Attachment File Path -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="bodyFilePath"
-                                label="本文ファイルパス"
-                                v-model="bodyFilePath"
-                                type="text"
-                                placeholder="本文ファイルパスを入力してください"
-                                :required="false"
-                                :error="bodyFilePathError"
-                            />
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-3/4">
-                            <InputField
-                                id="attachmentFilePath"
-                                label="添付ファイルパス"
-                                v-model="attachmentFilePath"
-                                type="text"
-                                placeholder="添付ファイルパスを入力してください"
-                                :required="false"
-                                :error="attachmentFilePathError"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-blue-200">
-                <!-- Fifth Row: Mailing List Name -->
-                <div class="space-y-2">
-                    <div class="flex items-center">
-                        <div class="w-[37%]">
-                            <InputField
-                                id="mailingListName"
-                                label="メーリングリスト名"
-                                v-model="mailingListName"
-                                type="text"
-                                placeholder="メーリングリスト名を入力してください"
-                                :required="false"
-                                :error="mailingListNameError"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <hr class="border-green-200">
+            <div>
+              <h1 class="text-3xl font-bold text-white mb-2">NAISメール宛先マスター</h1>
+              <p class="text-white text-opacity-90">業務メール配信設定管理システム</p>
             </div>
-
-            <div class="px-6">
-                <div>
-                    <label class="block mb-2 text-gray-700 font-medium">送信宛先</label>
-                    <div class="grid grid-cols-5 gap-4">
-                        <div v-for="n in 10" :key="n" class="flex items-center space-x-2">
-                            <span class="text-sm text-gray-600 w-4">{{ n }}</span>
-                            <InputField
-                                :id="`email-${n}`"
-                                label=""
-                                v-model="emails[n - 1]"
-                                type="text"
-                                placeholder="送信宛先を入力してください"
-                                :required="false"
-                            />
-                        </div>
-                    </div>
-                </div>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-full bg-green-100 text-green-600 border border-green-200">
+              <i class="fas fa-circle text-green-400 mr-2"></i>
+              管理者モード
             </div>
-            <div class="px-6">
-                <div class="pt-6 border-t border-purple-200">
-                    <div class="flex items-center">
-                        <div class=" w-[24%]">
-                            <SelectBox
-                                v-model="autoUpdateLock"
-                                label="自動更新ロック区分"
-                                :options="autoUpdateLockOpts"
-                                placeholder="自動更新ロック区分"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
+      </div>
+
+      <form @submit.prevent="handleSubmit" class="space-y-8">
         
-        <!-- Action Buttons -->
-        <div class="my-6 px-6">
-            <div class="flex h-full flex-col gap-6 sm:gap-5 xl:flex-row">
-                <div class="bg-white p-4 xl:w-2/5 items-center flex justify-center">
-                    <div class="flex">
-                        <button
-                        type="button"
-                        @click="handleDelete"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                        style="border-radius: 6px 0 0 6px; border-right: none;"
-                        >
-                        削除
-                        </button>
-                        <button
-                        type="button"
-                        @click="handleRestore"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                        style="border-radius: 0 6px 6px 0;"
-                        >
-                        復活
-                        </button>
-                    </div>
-                </div>
-            
-                <div class="p-4 xl:w-8/12 items-center flex justify-center">
-                    <div class="flex space-x-4">
-                        <!-- Center: Clear button -->
-                        <button
-                            type="button"
-                            @click="handleClear"
-                            class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                        >
-                            クリア
-                        </button>
-
-                        <!-- Right: Register button -->
-                        <button
-                            type="submit"
-                            class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                        >
-                            登録
-                        </button>
-                    </div>
-                </div>
+        <!-- 1. 基本情報カード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/30">
+              <i class="fas fa-info-circle text-white text-xl"></i>
             </div>
-        </div> 
-    </form>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-800 m-0">基本情報</h3>
+              <p class="text-sm text-gray-500 mt-1">業務の基本的な識別情報を入力してください</p>
+            </div>
+          </div>
+          
+          <div class="grid gap-6 md:grid-cols-2">
+            <div class="mb-6">
+              <InputField
+                id="businessId"
+                label="業務ID"
+                v-model="formData.businessId"
+                type="text"
+                icon="fas fa-id-badge"
+                placeholder=""
+                :required="true"
+                :error="businessIdError"
+              />
+            </div>
+            <div class="mb-6">
+              <InputField
+                id="businessName"
+                label="業務名"
+                v-model="formData.businessName"
+                type="text"
+                icon="fas fa-briefcase"
+                placeholder=""
+                :required="true"
+                :error="businessNameError"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 事業所・取引先情報カード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/30">
+              <i class="fas fa-building text-white text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-800 m-0">事業所・取引先情報</h3>
+              <p class="text-sm text-gray-500 mt-1">関連する事業所と取引先の詳細情報</p>
+            </div>
+          </div>
+          
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div class="mb-6">
+              <InputField
+                id="officeCode"
+                label="事業所コード"
+                v-model="formData.officeCode"
+                type="text"
+                icon="fas fa-hashtag"
+                placeholder=""
+                :required="true"
+                :error="officeCodeError"
+              />
+            </div>
+            <div class="mb-6">
+              <InputField
+                id="officeName"
+                label="事業所名"
+                v-model="formData.officeName"
+                type="text"
+                icon="fas fa-building-user"
+                placeholder=""
+                :required="true"
+                :error="officeNameError"
+              />
+            </div>
+            <div class="mb-6">
+              <InputField
+                id="clientCode"
+                label="得意先コード"
+                v-model="formData.clientCode"
+                type="text"
+                icon="fas fa-user-tag"
+                placeholder=""
+                :required="true"
+                :error="clientCodeError"
+              />
+            </div>
+            <div class="mb-6">
+              <InputField
+                id="clientName"
+                label="得意先名"
+                v-model="formData.clientName"
+                type="text"
+                icon="fas fa-user-tie"
+                placeholder=""
+                :required="true"
+                :error="clientNameError"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 送信設定カード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/30">
+              <i class="fas fa-paper-plane text-white text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-800 m-0">送信設定</h3>
+              <p class="text-sm text-gray-500 mt-1">メール送信に関する基本設定</p>
+            </div>
+          </div>
+          
+          <div class="grid gap-6 md:grid-cols-2">
+            <div class="mb-6">
+              <InputField
+                id="destinationName"
+                label="送信先名称"
+                v-model="formData.destinationName"
+                type="text"
+                icon="fas fa-tag"
+                placeholder=""
+                :required="false"
+                :error="destinationNameError"
+              />
+            </div>
+            <div class="mb-6">
+              <SelectBox
+                v-model="formData.sendMode"
+                label="送信モード"
+                :options="SendModes"
+                placeholder="送信モード"
+                icon="fas fa-cog"
+                :required="true"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. ファイル・ディレクトリ情報カード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/30">
+              <i class="fas fa-folder-open text-white text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-800 m-0">ファイル・ディレクトリ情報</h3>
+              <p class="text-sm text-gray-500 mt-1">ファイルの場所とメール内容の設定</p>
+            </div>
+          </div>
+          
+          <div class="grid gap-6 md:grid-cols-2">
+            <div>
+              <FileInput
+                v-model="formData.searchFileName"
+                accept=""
+                label="検索ファイル名"
+                icon="fas fa-search"
+                :required="true"
+                :error="searchFileNameError"
+              />
+            </div>
+            <div>
+              <FileInput
+                v-model="formData.searchDirectory"
+                accept=""
+                label="検索ディレクトリ"
+                icon="fas fa-folder"
+                :required="true"
+                :error="searchDirectoryError"
+              />
+            </div>
+            <div class="mb-6">
+              <FileInput
+                v-model="formData.sendDirectory"
+                accept=""
+                label="送信ディレクトリ"
+                icon="fas fa-folder-plus"
+                :required="true"
+                :error="sendDirectoryError"
+              />
+            </div>
+            <div class="mb-6">
+              <FileInput
+                v-model="formData.mailTitle"
+                accept=""
+                label="メールタイトル"
+                icon="fas fa-envelope"
+                :required="true"
+                :error="mailTitleError"
+              />
+            </div>
+          </div>
+          <div class="mb-6">
+            <FileInput
+              v-model="formData.bodyFilePath"
+              accept=""
+              label="本文ファイルパス"
+              icon="fas fa-file-alt"
+              :required="true"
+              :error="bodyFilePathError"
+            />
+          </div>
+        </div>
+
+        <!-- 5. 宛先情報カード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/30">
+              <i class="fas fa-address-book text-white text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-800 m-0">宛先情報</h3>
+              <p class="text-sm text-gray-500 mt-1">メール送信先の管理</p>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <InputField
+              id="mailingList"
+              label="メーリングリスト名"
+              v-model="formData.mailingList"
+              type="text"
+              icon="fas fa-list"
+              placeholder=""
+              :required="true"
+              :error="mailingListError"
+            />
+          </div>
+          
+          <div class="grid gap-6 md:grid-cols-2 mb-6">
+            <div 
+              v-for="(email, index) in formData.emailAddresses" 
+              :key="index" 
+              class=""
+            >
+              <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-at mr-2 text-gray-500 w-4"></i>
+                送信宛先{{ index + 1 }}
+              </label>
+              <div class="flex gap-2">
+                <input 
+                  type="email" 
+                  v-model="formData.emailAddresses[index]" 
+                  :placeholder="index === 0 ? '必須' : '宛先を入力してください'" 
+                  class="flex-1 px-4 py-3 text-sm text-gray-900 bg-white border-2 border-gray-200 rounded-xl transition-all duration-200 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-100 hover:border-gray-300" 
+                  :required="index === 0"
+                />
+                <button 
+                  v-if="index > 0" 
+                  type="button" 
+                  @click="removeEmailAddress(index)"
+                  class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-500 bg-white border-2 border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:-translate-y-0.5"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            type="button" 
+            @click="addEmailAddress" 
+            class="w-full border-2 border-dashed border-gray-300 bg-gray-50 text-gray-500 px-4 py-4 rounded-xl mt-4 transition-all duration-200 hover:border-indigo-500 hover:bg-blue-50 hover:text-indigo-500 cursor-pointer"
+          >
+            <i class="fas fa-plus mr-2"></i>
+            宛先を追加する
+          </button>
+        </div>
+
+        <!-- 6. システム設定カード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/30">
+              <i class="fas fa-sliders-h text-white text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-800 m-0">システム設定</h3>
+              <p class="text-sm text-gray-500 mt-1">システムの動作に関する設定</p>
+            </div>
+          </div>
+          
+          <div class="max-w-md">
+            <div class="mb-6">
+              <SelectBox
+                v-model="formData.autoUpdateLock"
+                label="自動更新ロック区分"
+                :options="autoUpdateLocks"
+                placeholder=""
+                icon="fas fa-lock"
+                :required="true"
+              />
+              <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-start">
+                  <i class="fas fa-info-circle text-blue-500 mr-2 mt-0.5"></i>
+                  <p class="text-sm text-blue-700">
+                    有効にすると、システムによる自動更新が無効になります。手動での更新が必要になります。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- アクションボタンカード -->
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/8 border border-gray-200 p-8 mb-6 transition-all duration-300 hover:shadow-xl hover:shadow-black/12 hover:-translate-y-0.5">
+          <div class="flex flex-col sm:flex-row justify-end gap-4">
+            <button 
+              type="button" 
+              @click="deleteRecord" 
+              class="inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-500 bg-white border-2 border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:-translate-y-0.5"
+            >
+              <i class="fas fa-trash mr-2"></i>
+              削除
+            </button>
+            <button 
+              type="button" 
+              @click="restoreRecord" 
+              class="inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-500 bg-white border-2 border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:-translate-y-0.5"
+            >
+              <i class="fas fa-undo mr-2"></i>
+              復活
+            </button>
+            <button 
+              type="button" 
+              @click="clearForm" 
+              class="inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-lg transition-all duration-200 text-white bg-amber-500 shadow-lg shadow-amber-500/40 hover:bg-amber-600 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-amber-500/50"
+            >
+              <i class="fas fa-eraser mr-2"></i>
+              クリア
+            </button>
+            <button 
+              type="submit" 
+              class="inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-lg transition-all duration-200 text-white bg-gradient-to-br from-[#667eea] to-[#764ba2] shadow-lg shadow-indigo-500/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/50"
+            >
+              <i class="fas fa-save mr-2"></i>
+              更新
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
 </template>
-<script setup>
-    import { ref, reactive, onMounted } from 'vue'
-    import InputField from '@/components/atoms/InputField.vue'
-    import TextArea from '@/components/atoms/TextArea.vue'
-    import Button from '@/components/atoms/Button.vue'
-    import SelectBox from '@/components/atoms/SelectBox.vue';
-    import { useRouter } from "vue-router";
 
-    const selectedMode = ref('');
-    const router = useRouter();
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import router from '@/router'
+import InputField from '@/components/atoms/InputField.vue'
+import Button from '@/components/atoms/Button.vue'
+import SelectBox from '@/components/atoms/SelectBox.vue';
+import FileInput from '@/components/atoms/FileInput.vue'
 
-    const transmissionModes = [
-    { value: 'MPDF', label: 'MPDF' },
-    { value: 'PDF', label: 'PDF' },
-    { value: 'TEXT', label: 'TEXT' },
-    { value: 'HTML', label: 'HTML' },
-    ];
+interface FormData {
+  businessId: string
+  businessName: string
+  officeCode: string
+  officeName: string
+  clientCode: string
+  clientName: string
+  destinationName: string
+  sendMode: string
+  searchFileName: string
+  searchDirectory: string
+  sendDirectory: string
+  mailTitle: string
+  bodyFilePath: string
+  mailingList: string
+  emailAddresses: string[]
+  autoUpdateLock: string
+}
 
-    const autoUpdateLockOpts = [
-    { value: '0', label: '0:無効' },
-    { value: '1', label: '1:有効' },
-    { value: '2', label: '2:部分ロック' },
-    { value: '3', label: '3:完全ロック' },
-    ];
+const formData = reactive<FormData>({
+  businessId: 'psurm22a',
+  businessName: '請求合計表 日酒販',
+  officeCode: '0020',
+  officeName: '広域卸営業部',
+  clientCode: '8527',
+  clientName: '千葉県酒類販売',
+  destinationName: '広域卸）千葉県酒類販売',
+  sendMode: 'MPDF',
+  searchFileName: 'psurm22a_00208527_*.PDF',
+  searchDirectory: 'Z:\\HOSTON\\BSP',
+  sendDirectory: 'D:\\Mail_Sender\\SEND',
+  mailTitle: '請求合計表【日本酒類販売株式会社】',
+  bodyFilePath: 'D:\\Mail_Sender\\MAIL\\file\\MPDF.TXT',
+  mailingList: 'psurm22a_00208527@nishuhan.co.jp',
+  emailAddresses: ['aaa@nishuhan.co.jp', '', '', ''],
+  autoUpdateLock: '0'
+})
 
+// Error refs (you can implement validation logic)
+const businessIdError = ref('')
+const businessNameError = ref('')
+const officeCodeError = ref('')
+const officeNameError = ref('')
+const clientCodeError = ref('')
+const clientNameError = ref('')
+const destinationNameError = ref('')
+const searchFileNameError = ref('')
+const searchDirectoryError = ref('')
+const sendDirectoryError = ref('')
+const mailTitleError = ref('')
+const bodyFilePathError = ref('')
+const mailingListError = ref('')
 
-    // Form data
-    const businessId = ref('psurm22a')
-    const businessOfficeCode = ref('0020')
-    const businessOfficeName = ref('広域卸営業部')
-    const customerCode = ref('8527')
-    const chainStoreName = ref('')
-    const supplier = ref('')
-    const orderDestination = ref('')
-    const extendedDistributionCode = ref('')
-    const destinationName = ref('(広域卸) 千葉県酒類販売')
-    const transmissionMode = ref('MPDF')
-    const searchFileName = ref('psurm22a_00208527_*.PDF')
-    const searchDirectory = ref('Z:\\HOSTON\\BSP')
-    const transmissionDirectory = ref('D:\\Mail_Sender\\SEND')
-    const mailTitle = ref('請求合計表【日本酒類販売株式会社】')
-    const bodyFilePath = ref('D:\\Mail_Sender\\MAILfile\\MPDF.TXT')
-    const attachmentFilePath = ref('')
-    const mailingListName = ref('psurm22a_00208527@nishuhan.co.jp')
+const addEmailAddress = () => {
+  formData.emailAddresses.push('')
+}
 
-    const emails = ref(Array(10).fill('aaa@minhuhan.co.jp'));
-    const emailError = false;
+const removeEmailAddress = (index: number) => {
+  if (index > 0) {
+    formData.emailAddresses.splice(index, 1)
+  }
+}
 
-    function scrollToTop() {
-    // Try scrolling the window
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    // Also try scrolling the document element and body
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    }
+const handleSubmit = () => {
+  console.log('Form submitted:', formData)
+  router.push('/detail/edit/confirmation');
+}
 
-    const handleSubmit = () => {
-        scrollToTop();
-        router.push('/register/edit/confirmation');
-    };
+const deleteRecord = () => {
+  if (confirm('本当に削除しますか？')) {
+    console.log('Record deleted')
+    alert('削除しました')
+  }
+}
+
+const restoreRecord = () => {
+  console.log('Record restored')
+  alert('復活しました')
+}
+
+const navigateToList = () => {
+  router.push('/')
+}
+
+const clearForm = () => {
+  if (confirm('フォームをクリアしますか？')) {
+    Object.keys(formData).forEach(key => {
+      if (key === 'emailAddresses') {
+        formData[key] = ['', '', '', '']
+      } else if (key === 'sendMode') {
+        formData[key] = 'MPDF'
+      } else if (key === 'autoUpdateLock') {
+        formData[key] = '0'
+      } else {
+        formData[key as keyof FormData] = '' as any
+      }
+    })
+    alert('フォームをクリアしました')
+  }
+}
+
+const SendModes = [
+  { value: 'MPDF', label: 'MPDF（PDFファイル）' },
+  { value: 'TXT', label: 'TXT（テキストファイル）' },
+  { value: 'ZIP', label: 'ZIP（圧縮ファイル）' },
+];
+
+const autoUpdateLocks = [
+  { value: '0', label: '0: 無効（自動更新を許可）' },
+  { value: '1', label: '1: 有効（自動更新を無効化）' },
+];
+
+// Try scrolling the window
+window.scrollTo({ top: 0, behavior: 'auto' });
+// Also try scrolling the document element and body
+document.documentElement.scrollTop = 0;
+document.body.scrollTop = 0;
 </script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+.font-inter {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+</style>
