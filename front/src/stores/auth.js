@@ -108,9 +108,16 @@ export const useAuthStore = defineStore('auth', () => {
   const handleLocalCallback = async (router = null) => {
     try {
       const apiUrl = configCache.value.apiUrl || await getApiUrl()
+      const environment = configCache.value.environment || await getEnvironment()
       
-      // Simulate the OAuth callback with dummy parameters
-      const callbackResponse = await axios.get(`${apiUrl}/auth/google/callback?local=true`)
+      // Only add local=true in development environment
+      const isDev = environment === 'development' || import.meta.env.DEV
+      const callbackUrl = isDev 
+        ? `${apiUrl}/auth/google/callback?local=true`
+        : `${apiUrl}/auth/google/callback`
+      
+      // Simulate the OAuth callback with dummy parameters (only in dev)
+      const callbackResponse = await axios.get(callbackUrl)
       
       if (callbackResponse.data && callbackResponse.data.status === 'success') {
         const data = callbackResponse.data
