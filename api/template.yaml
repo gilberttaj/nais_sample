@@ -53,6 +53,7 @@ Parameters:
   CognitoUserPoolClientId:
     Type: String
     Description: ID of the Cognito User Pool Client
+    Default: ""
 
   GoogleClientId:
     Type: String
@@ -130,9 +131,15 @@ Resources:
       SecretString: !Sub 
         - |
           {
+            "client_id": "${CognitoUserPoolClientId}",
             "client_secret": "${CognitoUserPoolClientSecret}",
             "google_client_id": "${GoogleClientId}",
             "google_client_secret": "${GoogleClientSecret}",
+            "cognito_domain_url": "${CognitoDomainUrl}",
+            "google_redirect_uri": "https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/callback",
+            "oauth_callback_url": "https://${NaisRestApi}-${ApiGatewayVpcEndpointId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/auth/google/callback",
+            "frontend_url": "${FrontendUrl}",
+            "user_pool_id": "${CognitoUserPoolId}",
             "auth_library_version": "2.1.0",
             "stage": "${Stage}",
             "workspace_auth_enabled": "${WorkspaceAuthStrict}",

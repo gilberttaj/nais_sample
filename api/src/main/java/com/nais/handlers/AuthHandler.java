@@ -341,16 +341,33 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             // Exchange the authorization code for tokens
             Map<String, String> tokenRequest = new HashMap<>();
             tokenRequest.put("grant_type", "authorization_code");
-            tokenRequest.put("client_id", System.getenv("CLIENT_ID"));
             tokenRequest.put("code", authCode);
             
-            // Get client secret from Secrets Manager
+            // Get OAuth credentials from Secrets Manager
             try {
                 String secretName = System.getenv("SECRET_NAME");
                 if (secretName != null) {
                     String secretJson = workspaceAuthService.getSecretValue(secretName);
                     if (secretJson != null) {
                         JsonNode secretData = objectMapper.readTree(secretJson);
+                        
+                        // Get client_id from secrets
+                        if (secretData.has("client_id")) {
+                            String appClientId = secretData.get("client_id").asText();
+                            tokenRequest.put("client_id", appClientId);
+                            context.getLogger().log("Added client_id from Secrets Manager to token request");
+                        } else {
+                            // Fallback to environment variable
+                            String envClientId = System.getenv("CLIENT_ID");
+                            if (envClientId != null) {
+                                tokenRequest.put("client_id", envClientId);
+                                context.getLogger().log("Added client_id from environment variable to token request");
+                            } else {
+                                context.getLogger().log("WARNING: client_id not found in Secrets Manager or environment");
+                            }
+                        }
+                        
+                        // Get client_secret from secrets
                         if (secretData.has("client_secret")) {
                             String appClientSecret = secretData.get("client_secret").asText();
                             tokenRequest.put("client_secret", appClientSecret);
@@ -365,8 +382,13 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
                     context.getLogger().log("WARNING: SECRET_NAME environment variable not set");
                 }
             } catch (Exception e) {
-                context.getLogger().log("WARNING: Error retrieving client_secret from Secrets Manager: " + e.getMessage());
-                // Continue without client_secret - some Cognito configurations don't require it
+                context.getLogger().log("WARNING: Error retrieving OAuth credentials from Secrets Manager: " + e.getMessage());
+                // Fallback to environment variables
+                String envClientId = System.getenv("CLIENT_ID");
+                if (envClientId != null) {
+                    tokenRequest.put("client_id", envClientId);
+                    context.getLogger().log("Using fallback client_id from environment variable");
+                }
             }
             
             // Set the redirect URI from environment variable
@@ -714,32 +736,63 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         
         // Auto-detect based on available configuration
         String cognitoDomainUrl = System.getenv("COGNITO_DOMAIN_URL");
-        String clientId = System.getenv("CLIENT_ID");
         String googleClientId = System.getenv("GOOGLE_CLIENT_ID");
         String secretName = System.getenv("SECRET_NAME");
         
-        // Check if we have minimal OAuth configuration
-        boolean hasOAuthConfig = cognitoDomainUrl != null && !cognitoDomainUrl.isEmpty() &&
-                                clientId != null && !clientId.isEmpty() &&
-                                googleClientId != null && !googleClientId.isEmpty();
-        
-        // Check if secrets are accessible
-        boolean hasSecrets = false;
+        // Also check secrets manager for configuration
+        boolean hasSecretsConfig = false;
         if (secretName != null && !secretName.isEmpty()) {
             try {
                 String secretValue = workspaceAuthService.getSecretValue(secretName);
-                hasSecrets = secretValue != null && !secretValue.isEmpty();
-                context.getLogger().log("Secrets accessibility check: " + (hasSecrets ? "accessible" : "not accessible"));
+                if (secretValue != null) {
+                    JsonNode secretData = objectMapper.readTree(secretValue);
+                    if (secretData.has("cognito_domain_url") && secretData.has("google_client_id")) {
+                        hasSecretsConfig = true;
+                        context.getLogger().log("Found OAuth configuration in Secrets Manager");
+                    }
+                }
+            } catch (Exception e) {
+                context.getLogger().log("Could not check secrets for OAuth config: " + e.getMessage());
+            }
+        }
+        
+        // Check if we have minimal OAuth configuration (environment or secrets)
+        boolean hasBasicOAuthConfig = (cognitoDomainUrl != null && !cognitoDomainUrl.isEmpty() &&
+                                     googleClientId != null && !googleClientId.isEmpty()) || 
+                                     hasSecretsConfig;
+        
+        // Check if secrets are accessible and contain required OAuth credentials
+        boolean hasCompleteSecrets = false;
+        boolean hasPartialSecrets = false;
+        if (secretName != null && !secretName.isEmpty()) {
+            try {
+                String secretValue = workspaceAuthService.getSecretValue(secretName);
+                if (secretValue != null && !secretValue.isEmpty()) {
+                    JsonNode secretData = objectMapper.readTree(secretValue);
+                    boolean hasClientId = secretData.has("client_id") && !secretData.get("client_id").asText().isEmpty();
+                    boolean hasClientSecret = secretData.has("client_secret") && !secretData.get("client_secret").asText().isEmpty();
+                    
+                    hasCompleteSecrets = hasClientId && hasClientSecret;
+                    hasPartialSecrets = hasClientId || hasClientSecret;
+                    
+                    context.getLogger().log("OAuth credentials check - client_id: " + hasClientId + ", client_secret: " + hasClientSecret);
+                } else {
+                    context.getLogger().log("Secrets accessible but empty");
+                }
             } catch (Exception e) {
                 context.getLogger().log("Secrets accessibility check failed: " + e.getMessage());
+                // Fallback: check environment variables
+                String envClientId = System.getenv("CLIENT_ID");
+                hasPartialSecrets = envClientId != null && !envClientId.isEmpty();
+                context.getLogger().log("Fallback to environment CLIENT_ID: " + (hasPartialSecrets ? "available" : "not available"));
             }
         }
         
         // Determine mode based on configuration availability
-        if (hasOAuthConfig && hasSecrets) {
+        if (hasBasicOAuthConfig && hasCompleteSecrets) {
             context.getLogger().log("Full OAuth configuration detected - using OAUTH mode");
             return AuthenticationMode.OAUTH;
-        } else if (hasOAuthConfig) {
+        } else if (hasBasicOAuthConfig && hasPartialSecrets) {
             context.getLogger().log("Partial OAuth configuration detected - using HYBRID mode");
             return AuthenticationMode.HYBRID;
         } else {
