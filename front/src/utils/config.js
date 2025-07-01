@@ -1,29 +1,21 @@
-// Configuration utility - uses .env.local for development, AWS Secrets Manager for production
+// Configuration utility - fetches from Express API endpoint
 let configCache = null;
 
-const isProduction = () => {
-  return import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production';
+const isDevelopment = () => {
+  return import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'development';
 };
 
-const fetchConfigFromSecrets = async () => {
+const fetchConfigFromAPI = async () => {
   try {
-    const { SecretsManagerClient, GetSecretValueCommand } = await import('@aws-sdk/client-secrets-manager');
-    
-    const client = new SecretsManagerClient({ 
-      region: 'ap-northeast-1',
-    });
-    
-    const command = new GetSecretValueCommand({
-      SecretId: 'nais-frontend-config'
-    });
-    
-    const response = await client.send(command);
-    const config = JSON.parse(response.SecretString);
-    
-    console.log('✅ Configuration loaded from AWS Secrets Manager');
+    const response = await fetch('/api/config');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const config = await response.json();
+    console.log('✅ Configuration loaded from Express API');
     return config;
   } catch (error) {
-    console.error('❌ Failed to fetch configuration from Secrets Manager:', error);
+    console.error('❌ Failed to fetch configuration from API:', error);
     throw error;
   }
 };
@@ -41,12 +33,12 @@ const getConfigFromEnv = () => {
 const getConfig = async () => {
   if (configCache) return configCache;
   
-  if (isProduction()) {
-    console.log('🔧 Loading configuration from AWS Secrets Manager (Production)');
-    configCache = await fetchConfigFromSecrets();
-  } else {
+  if (isDevelopment()) {
     console.log('🔧 Loading configuration from .env.local (Development)');
     configCache = getConfigFromEnv();
+  } else {
+    console.log('🔧 Loading configuration from Express API (Production)');
+    configCache = await fetchConfigFromAPI();
   }
   
   return configCache;
