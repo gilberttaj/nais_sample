@@ -46,10 +46,15 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
+    - name: Build Maven project
+      run: |
+        cd api
+        mvn clean compile package -DskipTests
+
     - name: Build SAM application
       run: |
         cd api
-        sam build --use-container
+        sam build
 
     - name: Deploy SAM application
       env:
