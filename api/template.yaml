@@ -188,7 +188,7 @@ Resources:
     Properties:
       FunctionName: !Sub 'Nais-AmplifyAuth-WorkspaceValidation-${Stage}'
       Description: !Sub 'Nais Amplify-like Authentication Handler with Google Workspace email validation (${Stage})'
-      CodeUri: ./
+      CodeUri: target/amplify-auth-lambda.jar
       Handler: com.nais.handlers.AuthHandler::handleRequest
       Runtime: java11
       MemorySize: !If [IsProduction, 1024, 512]
