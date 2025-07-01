@@ -24,17 +24,33 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   const isLocalMode = computed(() => {
-    const environment = getEnvironment()
-    const apiUrl = getApiUrl()
-    return environment === 'development' || 
-           apiUrl.includes('localhost') || 
-           apiUrl.includes('127.0.0.1')
+    // For now, use a simple check based on import.meta.env
+    // This will be updated properly during initialization
+    return import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'development'
   })
+  
+  // Cache for async config values
+  const configCache = ref({
+    apiUrl: null,
+    environment: null
+  })
+  
+  // Initialize config cache
+  const updateConfigCache = async () => {
+    try {
+      configCache.value.environment = await getEnvironment()
+      configCache.value.apiUrl = await getApiUrl()
+    } catch (error) {
+      console.error('Error updating config cache:', error)
+    }
+  }
 
   // Actions
-  const initializeAuth = () => {
+  const initializeAuth = async () => {
     // Load tokens from secure localStorage on app start
     try {
+      await updateConfigCache()
+      
       const idToken = ls.get('id_token')
       const accessToken = ls.get('access_token')
       const refreshToken = ls.get('refresh_token')
@@ -57,16 +73,17 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (error) {
       console.error('Error initializing auth:', error)
-      clearAuth()
+      await clearAuth()
     }
   }
 
   const signInWithGoogle = async (router = null) => {
     try {
       isLoading.value = true
-      const apiUrl = getApiUrl()
+      const apiUrl = configCache.value.apiUrl || await getApiUrl()
+      const environment = configCache.value.environment || await getEnvironment()
       
-      console.log(`Initiating Google sign-in - API URL: ${apiUrl}, Environment: ${getEnvironment()}, Local Mode: ${isLocalMode.value}`)
+      console.log(`Initiating Google sign-in - API URL: ${apiUrl}, Environment: ${environment}, Local Mode: ${isLocalMode.value}`)
       
       const response = await axios.get(`${apiUrl}/auth/google/login`)
       
@@ -90,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const handleLocalCallback = async (router = null) => {
     try {
-      const apiUrl = getApiUrl()
+      const apiUrl = configCache.value.apiUrl || await getApiUrl()
       
       // Simulate the OAuth callback with dummy parameters
       const callbackResponse = await axios.get(`${apiUrl}/auth/google/callback?local=true`)
@@ -138,7 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const storeAuthTokens = (tokenData) => {
+  const storeAuthTokens = async (tokenData) => {
     try {
       // Store in secure localStorage
       ls.set('id_token', tokenData.id_token)
@@ -182,14 +199,14 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('No refresh token available')
       }
 
-      const apiUrl = getApiUrl()
+      const apiUrl = configCache.value.apiUrl || await getApiUrl()
       const response = await axios.post(`${apiUrl}/auth/token/refresh`, {
         refreshToken: tokens.value.refreshToken,
         username: user.value?.email
       })
 
       if (response.data && response.data.id_token) {
-        storeAuthTokens({
+        await storeAuthTokens({
           id_token: response.data.id_token,
           access_token: response.data.access_token,
           refresh_token: tokens.value.refreshToken, // Keep existing refresh token
@@ -203,7 +220,7 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     } catch (error) {
       console.error('Error refreshing tokens:', error)
-      clearAuth()
+      await clearAuth()
       return false
     }
   }
@@ -214,7 +231,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (tokens.value.accessToken && !isLocalMode.value) {
         // Call logout endpoint for production
-        const apiUrl = getApiUrl()
+        const apiUrl = configCache.value.apiUrl || await getApiUrl()
         await axios.post(`${apiUrl}/auth/logout`, {
           accessToken: tokens.value.accessToken
         })
@@ -222,18 +239,22 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       console.error('Error during logout:', error)
     } finally {
-      clearAuth()
+      await clearAuth()
       isLoading.value = false
     }
   }
 
-  const clearAuth = () => {
-    // Clear localStorage
-    ls.remove('id_token')
-    ls.remove('access_token')
-    ls.remove('refresh_token')
-    ls.remove('token_type')
-    ls.remove('token_expiration')
+  const clearAuth = async () => {
+    try {
+      // Clear localStorage
+      ls.remove('id_token')
+      ls.remove('access_token')
+      ls.remove('refresh_token')
+      ls.remove('token_type')
+      ls.remove('token_expiration')
+    } catch (error) {
+      console.error('Error clearing auth:', error)
+    }
     
     // Clear store state
     tokens.value = {

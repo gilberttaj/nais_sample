@@ -1,52 +1,85 @@
-// Configuration utility - simplified for build-time environment variables
-// All environment variables are now injected at build time (GitHub Actions or local build)
-const getEnvVar = (key) => {
-  const viteKey = key.startsWith('VITE_') ? key : `VITE_${key}`;
-  return import.meta.env[viteKey];
-}
+// Configuration utility - uses .env.local for development, AWS Secrets Manager for production
+let configCache = null;
 
-export const getApiUrl = () => {
-  const apiUrl = getEnvVar('VITE_API_URL');
+const isProduction = () => {
+  return import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production';
+};
+
+const fetchConfigFromSecrets = async () => {
+  try {
+    const { SecretsManagerClient, GetSecretValueCommand } = await import('@aws-sdk/client-secrets-manager');
+    
+    const client = new SecretsManagerClient({ 
+      region: 'ap-northeast-1',
+    });
+    
+    const command = new GetSecretValueCommand({
+      SecretId: 'nais-frontend-config'
+    });
+    
+    const response = await client.send(command);
+    const config = JSON.parse(response.SecretString);
+    
+    console.log('✅ Configuration loaded from AWS Secrets Manager');
+    return config;
+  } catch (error) {
+    console.error('❌ Failed to fetch configuration from Secrets Manager:', error);
+    throw error;
+  }
+};
+
+const getConfigFromEnv = () => {
+  return {
+    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    secureLsKey: import.meta.env.VITE_SECURE_LS_KEY || 'development-encryption-key-32-chars-minimum',
+    appName: import.meta.env.VITE_APP_NAME || 'NAIS Application',
+    appVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
+    environment: import.meta.env.VITE_APP_ENV || 'development'
+  };
+};
+
+const getConfig = async () => {
+  if (configCache) return configCache;
   
-  if (!apiUrl) {
-    console.error('VITE_API_URL environment variable is not set!');
-    throw new Error('API URL not configured. Please set VITE_API_URL environment variable.');
+  if (isProduction()) {
+    console.log('🔧 Loading configuration from AWS Secrets Manager (Production)');
+    configCache = await fetchConfigFromSecrets();
+  } else {
+    console.log('🔧 Loading configuration from .env.local (Development)');
+    configCache = getConfigFromEnv();
   }
   
-  console.log(`API URL: ${apiUrl}`);
-  return apiUrl;
-}
+  return configCache;
+};
 
-export const getEnvironment = () => {
-  const environment = getEnvVar('VITE_APP_ENV') || 'development';
-  console.log(`Environment: ${environment}`);
-  return environment;
-}
+export const getApiUrl = async () => {
+  const config = await getConfig();
+  return config.apiUrl;
+};
 
-export const getConfig = (key, fallback = null) => {
-  const value = getEnvVar(key);
-  return value || fallback;
-}
+export const getEnvironment = async () => {
+  const config = await getConfig();
+  return config.environment;
+};
 
-export const getSecureKey = () => {
-  const key = getEnvVar('VITE_SECURE_LS_KEY');
-  
-  if (!key) {
-    console.error('VITE_SECURE_LS_KEY environment variable is not set!');
-    return 'development-encryption-key-32-chars-minimum'; // Fallback for development
-  }
-  
-  return key;
-}
+export const getSecureKey = async () => {
+  const config = await getConfig();
+  return config.secureLsKey;
+};
+
+export const getConfigValue = async (key, fallback = null) => {
+  const config = await getConfig();
+  return config[key] || fallback;
+};
 
 // Debug function to show current configuration
-export const debugEnvironment = () => {
+export const debugEnvironment = async () => {
+  const config = await getConfig();
   console.log('Configuration Debug:', {
-    apiUrl: getEnvVar('VITE_API_URL'),
-    environment: getEnvVar('VITE_APP_ENV'),
-    appName: getEnvVar('VITE_APP_NAME'),
-    appVersion: getEnvVar('VITE_APP_VERSION'),
-    hasSecureKey: !!getEnvVar('VITE_SECURE_LS_KEY'),
+    ...config,
+    secureLsKey: config.secureLsKey ? '***' : 'not set',
+    source: isProduction() ? 'AWS Secrets Manager' : '.env.local',
+    isProduction: isProduction(),
     isViteDev: import.meta.env?.DEV
   });
-}
+};
