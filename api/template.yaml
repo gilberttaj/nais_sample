@@ -145,7 +145,7 @@ Resources:
             "workspace_auth_enabled": "${WorkspaceAuthStrict}",
             "allowed_domains": "${DomainsString}"
           }
-        - DomainsString: !Join [",", !Ref AllowedEmailDomains]
+        - DomainsString: !Join [",", !Split ["\n", !Join ["\n", !Ref AllowedEmailDomains]]]
       Tags:
         - Key: Application
           Value: Nais
