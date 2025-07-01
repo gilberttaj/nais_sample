@@ -1,5 +1,5 @@
 version: 1.0
-runtime: nodejs18
+runtime: nodejs16
 build:
   commands:
     pre-build:
@@ -9,7 +9,7 @@ build:
     - name: AWS_DEFAULT_REGION
       value: ap-northeast-1
 run:
-  runtime-version: 18
+  runtime-version: 16
   command: serve -s dist -p 8080
   network:
     port: 8080
