@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAIS | メール宛先マスター - 詳細表示</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8f9fa;
+    }
+    
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 40;
+      height: 100vh;
+      width: 290px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+    }
+    
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+    
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .sidebar-menu {
+      padding: 16px;
+      flex: 1;
+    }
+    
+    .menu-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .menu-item:hover {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+    
+    .menu-item.active {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+    
+    .menu-item i {
+      width: 20px;
+      margin-right: 12px;
+      text-align: center;
+    }
+    
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid #f3f4f6;
+    }
+    
+    .top-navbar {
+      position: fixed;
+      top: 0;
+      left: 290px;
+      right: 0;
+      z-index: 30;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .top-navbar.full-width {
+      left: 0;
+    }
+    
+    .main-content {
+      margin-left: 290px;
+      margin-top: 64px;
+      min-height: calc(100vh - 64px);
+    }
+    
+    .main-content.full-width {
+      margin-left: 0;
+    }
+    
+    .detail-card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      padding: 32px;
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+    
+    .detail-card:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .section-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 16px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0;
+    }
+    
+    .section-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    
+    .detail-group {
+      margin-bottom: 24px;
+    }
+    
+    .detail-label {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    
+    .detail-label i {
+      margin-right: 8px;
+      color: #6b7280;
+      width: 16px;
+    }
+    
+    .detail-value {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #111827;
+      background-color: #f9fafb;
+      border: 2px solid #f3f4f6;
+      border-radius: 10px;
+      font-weight: 500;
+      word-break: break-all;
+    }
+    
+    .detail-value.empty {
+      color: #9ca3af;
+      font-style: italic;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+    
+    .btn-secondary {
+      background: #ffffff;
+      color: #6b7280;
+      border-color: #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+      transform: translateY(-1px);
+    }
+    
+    .btn-success {
+      background: #10b981;
+      color: white;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-success:hover {
+      background: #059669;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+    
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-active {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+    }
+    
+    .status-inactive {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    
+    .breadcrumb a {
+      color: #667eea;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .breadcrumb a:hover {
+      color: #4f46e5;
+    }
+    
+    .breadcrumb-separator {
+      margin: 0 12px;
+      color: #d1d5db;
+    }
+    
+    .email-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .email-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .email-item i {
+      color: #64748b;
+      margin-right: 8px;
+    }
+    
+    .last-updated {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .grid-responsive {
+      display: grid;
+      gap: 24px;
+    }
+    
+    @media (min-width: 768px) {
+      .grid-responsive { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (min-width: 1024px) {
+      .grid-responsive.grid-4 { grid-template-columns: repeat(4, 1fr); }
+    }
+    
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      .top-navbar {
+        left: 0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+    
+    .hamburger-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+    
+    .hamburger-btn:hover {
+      background-color: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <!-- Sidebar Header -->
+  <div class="sidebar-header">
+    <div class="flex items-center">
+      <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+        <i class="fas fa-envelope-circle-check text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-800">NAIS</h1>
+        <p class="text-xs text-gray-500">メール宛先マスター</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Menu -->
+  <div class="sidebar-menu">
+    <div class="menu-section-title">メニュー</div>
+    <nav>
+      <a href="#" class="menu-item active">
+        <i class="fas fa-envelope"></i>
+        メール宛先マスター
+      </a>
+    </nav>
+    
+    <!-- <div class="menu-section-title mt-8">設定</div>
+    <nav>
+      <a href="#" class="menu-item">
+        <i class="fas fa-cog"></i>
+        システム設定
+      </a>
+      <a href="#" class="menu-item">
+        <i class="fas fa-users"></i>
+        ユーザー管理
+      </a>
+      <a href="#" class="menu-item">
+        <i class="fas fa-chart-bar"></i>
+        レポート
+      </a>
+    </nav> -->
+  </div>
+
+  <!-- Sidebar Footer -->
+  <!-- <div class="sidebar-footer">
+    <div class="flex items-center">
+      <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-user text-white text-sm"></i>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm font-medium text-gray-700">管理者</p>
+        <p class="text-xs text-gray-500">システム管理者</p>
+      </div>
+    </div>
+  </div> -->
+</div>
+
+<!-- Top Navbar -->
+<div class="top-navbar" id="topNavbar">
+  <div class="flex items-center">
+    <button class="hamburger-btn lg:hidden" onclick="toggleSidebar()">
+      <i class="fas fa-bars text-gray-600"></i>
+    </button>
+    <h2 class="text-lg font-semibold text-gray-800 ml-2">メール宛先マスター - 詳細表示</h2>
+  </div>
+  
+  <div class="flex items-center space-x-4">
+    <div class="status-badge status-active">
+      <i class="fas fa-check-circle mr-2"></i>
+      アクティブ
+    </div>
+    <button class="btn-secondary" style="padding: 8px 16px; font-size: 12px;">
+      <i class="fas fa-sign-out-alt mr-2"></i>
+      ログアウト
+    </button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a href="#"><i class="fas fa-home mr-2"></i>ホーム</a>
+      <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+      <a href="#">メール宛先マスター</a>
+      <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+      <span class="text-gray-900 font-medium">詳細表示</span>
+    </nav>
+
+    <!-- 詳細情報表示 -->
+    <div class="space-y-8">
+      
+      <!-- 1. 基本情報カード -->
+      <div class="detail-card">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="fas fa-info-circle text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="section-title">基本情報</h3>
+            <p class="section-subtitle">業務の基本的な識別情報</p>
+          </div>
+        </div>
+        
+        <div class="grid-responsive">
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-id-badge"></i>
+              業務ID
+            </label>
+            <div class="detail-value">psurm22a</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-briefcase"></i>
+              業務名
+            </label>
+            <div class="detail-value">請求合計表 日酒販</div>
+          </div>
+        </div>
+        
+        <div class="last-updated">
+          <i class="fas fa-clock mr-2"></i>
+          最終更新: 2024年1月15日 14:30
+        </div>
+      </div>
+
+      <!-- 2. 事業所・取引先情報カード -->
+      <div class="detail-card">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="fas fa-building text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="section-title">事業所・取引先情報</h3>
+            <p class="section-subtitle">関連する事業所と取引先の詳細情報</p>
+          </div>
+        </div>
+        
+        <div class="grid-responsive grid-4">
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-hashtag"></i>
+              事業所コード
+            </label>
+            <div class="detail-value">0020</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-building-user"></i>
+              事業所名
+            </label>
+            <div class="detail-value">広域卸営業部</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-user-tag"></i>
+              得意先コード
+            </label>
+            <div class="detail-value">8527</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-user-tie"></i>
+              得意先名
+            </label>
+            <div class="detail-value">千葉県酒類販売</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 送信設定カード -->
+      <div class="detail-card">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="fas fa-paper-plane text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="section-title">送信設定</h3>
+            <p class="section-subtitle">メール送信に関する基本設定</p>
+          </div>
+        </div>
+        
+        <div class="grid-responsive">
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-tag"></i>
+              送信先名称
+            </label>
+            <div class="detail-value">広域卸）千葉県酒類販売</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-cog"></i>
+              送信モード
+            </label>
+            <div class="detail-value">
+              <span class="inline-flex items-center">
+                <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                MPDF（PDFファイル）
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. ファイル・ディレクトリ情報カード -->
+      <div class="detail-card">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="fas fa-folder-open text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="section-title">ファイル・ディレクトリ情報</h3>
+            <p class="section-subtitle">ファイルの場所とメール内容の設定</p>
+          </div>
+        </div>
+        
+        <div class="grid-responsive">
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-search"></i>
+              検索ファイル名
+            </label>
+            <div class="detail-value">psurm22a_00208527_*.PDF</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-folder"></i>
+              検索ディレクトリ
+            </label>
+            <div class="detail-value">Z:\HOSTON\BSP</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-folder-plus"></i>
+              送信ディレクトリ
+            </label>
+            <div class="detail-value">D:\Mail_Sender\SEND</div>
+          </div>
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-envelope"></i>
+              メールタイトル
+            </label>
+            <div class="detail-value">請求合計表【日本酒類販売株式会社】</div>
+          </div>
+        </div>
+        <div class="detail-group">
+          <label class="detail-label">
+            <i class="fas fa-file-alt"></i>
+            本文ファイルパス
+          </label>
+          <div class="detail-value">D:\Mail_Sender\MAIL\file\MPDF.TXT</div>
+        </div>
+      </div>
+
+      <!-- 5. 宛先情報カード -->
+      <div class="detail-card">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="fas fa-address-book text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="section-title">宛先情報</h3>
+            <p class="section-subtitle">メール送信先の管理</p>
+          </div>
+        </div>
+        
+        <div class="detail-group">
+          <label class="detail-label">
+            <i class="fas fa-list"></i>
+            メーリングリスト名
+          </label>
+          <div class="detail-value">psurm22a_00208527@nishuhan.co.jp</div>
+        </div>
+        
+        <div class="detail-group">
+          <label class="detail-label">
+            <i class="fas fa-at"></i>
+            送信宛先一覧
+          </label>
+          <ul class="email-list">
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先1:</span>
+              <span class="ml-2">aaa@nishuhan.co.jp</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先2:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先3:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先4:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先5:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先6:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先7:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先8:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先9:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+            <li class="email-item">
+              <i class="fas fa-envelope"></i>
+              <span class="font-medium">送信宛先10:</span>
+              <span class="ml-2 text-gray-500 italic">未設定</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 6. システム設定カード -->
+      <div class="detail-card">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="fas fa-sliders-h text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="section-title">システム設定</h3>
+            <p class="section-subtitle">システムの動作に関する設定</p>
+          </div>
+        </div>
+        
+        <div class="max-w-md">
+          <div class="detail-group">
+            <label class="detail-label">
+              <i class="fas fa-lock"></i>
+              自動更新ロック区分
+            </label>
+            <div class="detail-value">
+              <span class="inline-flex items-center">
+                <i class="fas fa-unlock text-green-500 mr-2"></i>
+                0: 無効（自動更新を許可）
+              </span>
+            </div>
+            <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div class="flex items-start">
+                <i class="fas fa-info-circle text-green-500 mr-2 mt-0.5"></i>
+                <p class="text-sm text-green-700">
+                  現在、システムによる自動更新が有効になっています。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- アクションボタンカード -->
+      <div class="detail-card">
+        <div class="flex flex-col sm:flex-row justify-between gap-4">
+          <div class="flex gap-4">
+            <button type="button" class="btn btn-secondary">
+              <i class="fas fa-arrow-left mr-2"></i>
+              一覧に戻る
+            </button>
+            <button type="button" class="btn btn-danger">
+              <i class="fas fa-trash mr-2"></i>
+              削除
+            </button>
+          </div>
+          <div class="flex gap-4">
+            <button type="button" class="btn btn-success">
+              <i class="fas fa-edit mr-2"></i>
+              編集
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const topNavbar = document.getElementById('topNavbar');
+  const mainContent = document.getElementById('mainContent');
+  
+  sidebar.classList.toggle('show');
+  
+  if (sidebar.classList.contains('show')) {
+    topNavbar.classList.remove('full-width');
+    mainContent.classList.remove('full-width');
+  } else {
+    topNavbar.classList.add('full-width');
+    mainContent.classList.add('full-width');
+  }
+}
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', function(event) {
+  const sidebar = document.getElementById('sidebar');
+  const hamburgerBtn = document.querySelector('.hamburger-btn');
+  
+  if (window.innerWidth <= 1024 && 
+      !sidebar.contains(event.target) && 
+      !hamburgerBtn.contains(event.target) &&
+      sidebar.classList.contains('show')) {
+    sidebar.classList.remove('show');
+  }
+});
+</script>
+
+</body>
+</html> 
