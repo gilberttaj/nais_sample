@@ -83,49 +83,50 @@ export const useAuthStore = defineStore('auth', () => {
       const apiUrl = configCache.value.apiUrl || await getApiUrl()
       const environment = configCache.value.environment || await getEnvironment()
       
-      console.log(`Initiating Google sign-in - API URL: ${apiUrl}, Environment: ${environment}, Local Mode: ${isLocalMode.value}`)
+      console.log(`Initiating authentication - API URL: ${apiUrl}, Environment: ${environment}`)
       
       const response = await axios.get(`${apiUrl}/auth/google/login`)
       
-      if (response.data && response.data.redirectUrl) {
-        if (isLocalMode.value && response.data.local_mode) {
-          // Local development mode - simulate OAuth callback directly
-          console.log('Local development mode detected - simulating OAuth callback')
-          await handleLocalCallback(router)
-        } else {
-          // Production mode - redirect to Google login
-          window.location.href = response.data.redirectUrl
+      if (response.data && response.data.status === 'success') {
+        const authMode = response.data.auth_mode || 'OAUTH'
+        console.log(`Backend authentication mode: ${authMode}`)
+        
+        if (response.data.redirectUrl) {
+          if (authMode === 'OAUTH') {
+            // Full OAuth flow - redirect to Cognito/Google
+            console.log('OAuth mode - redirecting to external provider')
+            window.location.href = response.data.redirectUrl
+          } else {
+            // Hybrid or Mock mode - handle directly
+            console.log(`${authMode} mode - handling authentication directly`)
+            await handleDirectAuth(response.data, router, authMode)
+          }
         }
       }
     } catch (error) {
-      console.error('Error initiating Google login:', error)
+      console.error('Error initiating authentication:', error)
       throw error
     } finally {
       isLoading.value = false
     }
   }
 
-  const handleLocalCallback = async (router = null) => {
+  const handleDirectAuth = async (loginResponse, router = null, authMode = 'HYBRID') => {
     try {
       const apiUrl = configCache.value.apiUrl || await getApiUrl()
-      const environment = configCache.value.environment || await getEnvironment()
       
-      // Only add local=true in development environment
-      const isDev = environment === 'development' || import.meta.env.DEV
-      const callbackUrl = isDev 
-        ? `${apiUrl}/auth/google/callback?local=true`
-        : `${apiUrl}/auth/google/callback`
+      console.log(`Handling direct authentication for ${authMode} mode`)
       
-      // Simulate the OAuth callback with dummy parameters (only in dev)
-      const callbackResponse = await axios.get(callbackUrl)
+      // For non-OAuth modes, call the callback endpoint to get tokens
+      const callbackResponse = await axios.get(`${apiUrl}/auth/google/callback`)
       
       if (callbackResponse.data && callbackResponse.data.status === 'success') {
         const data = callbackResponse.data
         
-        console.log('Local authentication successful!', {
+        console.log(`${authMode} authentication successful!`, {
           email: data.email,
           message: data.message,
-          localMode: data.local_mode,
+          authMode: data.auth_mode,
           tokenType: data.token_type,
           expiresIn: data.expires_in,
           // Don't log actual tokens for security
@@ -144,7 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
           refresh_token: data.refresh_token,
           expires_in: data.expires_in.toString(),
           token_type: data.token_type,
-          local_mode: 'true'
+          auth_mode: authMode
         })
         
         // Use router to navigate to AuthValidation or fallback to window.location
@@ -157,9 +158,15 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Authentication failed: ' + (callbackResponse.data?.message || 'Unknown error'))
       }
     } catch (error) {
-      console.error('Error in local callback:', error)
+      console.error(`Error in ${authMode} authentication:`, error)
       throw error
     }
+  }
+
+  const handleLocalCallback = async (router = null) => {
+    // This method is now deprecated in favor of handleDirectAuth
+    // Keeping for backward compatibility
+    return handleDirectAuth({ auth_mode: 'MOCK' }, router, 'MOCK')
   }
 
   const storeAuthTokens = async (tokenData) => {

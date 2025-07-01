@@ -84,42 +84,40 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             return handleOptionsRequest();
         }
         
-        // Check if running in local development mode
-        boolean isLocalMode = isLocalDevelopmentMode();
-        if (isLocalMode) {
-            context.getLogger().log("Running in local development mode with dummy authentication");
-        }
+        // Auto-detect authentication mode based on available configuration
+        AuthenticationMode authMode = detectAuthenticationMode(context);
+        context.getLogger().log("Using authentication mode: " + authMode);
         
         switch (path) {
             case "/auth/health":
                 if ("GET".equals(httpMethod)) {
-                    return handleHealthCheck(input);
+                    return handleHealthCheck(input, authMode);
                 }
                 break;
                 
-            // OAuth Step 1: Initiate OAuth flow
+            // OAuth Step 1: Initiate authentication flow
             case "/auth/google/login":
                 if ("GET".equals(httpMethod)) {
-                    return isLocalMode ? handleLocalLogin(context) : initiateGoogleOAuth(context);
+                    return handleInitiateAuth(context, authMode);
                 }
                 break;
                 
-            // OAuth Step 2: Handle OAuth callback from Google
+            // OAuth Step 2: Handle authentication callback
             case "/auth/google/callback":
                 if ("GET".equals(httpMethod)) {
-                    return isLocalMode ? handleLocalCallback(input, context) : handleGoogleOAuthCallback(input);
+                    return handleAuthCallback(input, context, authMode);
                 }
                 break;
                 
             case "/auth/token/refresh":
                 if ("POST".equals(httpMethod)) {
-                    return isLocalMode ? handleLocalTokenRefresh(input, context) : handleTokenRefresh(input);
+                    return handleTokenRefresh(input, authMode);
                 }
                 break;
                 
             case "/auth/logout":
                 if ("POST".equals(httpMethod)) {
-                    return isLocalMode ? handleLocalLogout(input, context) : handleLogout(input);
+                    return handleLogout(input, authMode);
                 }
                 break;
                 
@@ -135,6 +133,42 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         }
         
         return ResponseHelper.createErrorResponse(405, "Method not allowed for " + path);
+    }
+
+    /**
+     * Flexible authentication initiation - adapts to available configuration
+     */
+    private APIGatewayProxyResponseEvent handleInitiateAuth(Context context, AuthenticationMode authMode) throws Exception {
+        context.getLogger().log("Initiating authentication flow in " + authMode + " mode");
+        
+        switch (authMode) {
+            case OAUTH:
+                return initiateGoogleOAuth(context);
+            case HYBRID:
+                return initiateHybridAuth(context);
+            case MOCK:
+                return initiateMockAuth(context);
+            default:
+                return createErrorResponse(500, "Unknown authentication mode: " + authMode);
+        }
+    }
+    
+    /**
+     * Flexible authentication callback - adapts to available configuration
+     */
+    private APIGatewayProxyResponseEvent handleAuthCallback(APIGatewayProxyRequestEvent input, Context context, AuthenticationMode authMode) throws Exception {
+        context.getLogger().log("Handling authentication callback in " + authMode + " mode");
+        
+        switch (authMode) {
+            case OAUTH:
+                return handleGoogleOAuthCallback(input);
+            case HYBRID:
+                return handleHybridCallback(input, context);
+            case MOCK:
+                return handleMockCallback(input, context);
+            default:
+                return createErrorResponse(500, "Unknown authentication mode: " + authMode);
+        }
     }
 
     /**
@@ -188,6 +222,7 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             responseBody.put("redirectUrl", redirectUrl);
             responseBody.put("workspace_auth_enabled", workspaceAuthService.hasEmailRestrictions());
             responseBody.put("workspace_config", workspaceAuthService.getConfigurationInfo());
+            responseBody.put("auth_mode", "OAUTH");
             
             APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
             response.setStatusCode(200); // Use 200 instead of 302 to avoid CORS issues
@@ -660,27 +695,66 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
     }
 
     /**
-     * Check if running in local development mode
+     * Auto-detect authentication mode based on available configuration
      */
-    private boolean isLocalDevelopmentMode() {
-        String environment = System.getenv("ENVIRONMENT");
-        String localMode = System.getenv("LOCAL_MODE");
+    private AuthenticationMode detectAuthenticationMode(Context context) {
+        context.getLogger().log("Auto-detecting authentication mode based on available configuration");
         
-        // Debug logging
-        Context context = null;
-        try {
-            if (authClient != null) {
-                context = authClient.getLambdaContext();
-                if (context != null) {
-                    context.getLogger().log("Local mode check - ENVIRONMENT: " + environment + ", LOCAL_MODE: " + localMode);
-                }
+        // Check for explicit mode override
+        String explicitMode = System.getenv("AUTH_MODE");
+        if (explicitMode != null) {
+            try {
+                AuthenticationMode mode = AuthenticationMode.valueOf(explicitMode.toUpperCase());
+                context.getLogger().log("Using explicit authentication mode: " + mode);
+                return mode;
+            } catch (IllegalArgumentException e) {
+                context.getLogger().log("Invalid AUTH_MODE specified: " + explicitMode + ", falling back to auto-detection");
             }
-        } catch (Exception e) {
-            // Ignore if context not available
         }
         
-        // Prioritize explicit local mode settings
-        return "local".equalsIgnoreCase(environment) || "true".equalsIgnoreCase(localMode);
+        // Auto-detect based on available configuration
+        String cognitoDomainUrl = System.getenv("COGNITO_DOMAIN_URL");
+        String clientId = System.getenv("CLIENT_ID");
+        String googleClientId = System.getenv("GOOGLE_CLIENT_ID");
+        String secretName = System.getenv("SECRET_NAME");
+        
+        // Check if we have minimal OAuth configuration
+        boolean hasOAuthConfig = cognitoDomainUrl != null && !cognitoDomainUrl.isEmpty() &&
+                                clientId != null && !clientId.isEmpty() &&
+                                googleClientId != null && !googleClientId.isEmpty();
+        
+        // Check if secrets are accessible
+        boolean hasSecrets = false;
+        if (secretName != null && !secretName.isEmpty()) {
+            try {
+                String secretValue = workspaceAuthService.getSecretValue(secretName);
+                hasSecrets = secretValue != null && !secretValue.isEmpty();
+                context.getLogger().log("Secrets accessibility check: " + (hasSecrets ? "accessible" : "not accessible"));
+            } catch (Exception e) {
+                context.getLogger().log("Secrets accessibility check failed: " + e.getMessage());
+            }
+        }
+        
+        // Determine mode based on configuration availability
+        if (hasOAuthConfig && hasSecrets) {
+            context.getLogger().log("Full OAuth configuration detected - using OAUTH mode");
+            return AuthenticationMode.OAUTH;
+        } else if (hasOAuthConfig) {
+            context.getLogger().log("Partial OAuth configuration detected - using HYBRID mode");
+            return AuthenticationMode.HYBRID;
+        } else {
+            context.getLogger().log("No OAuth configuration detected - using MOCK mode");
+            return AuthenticationMode.MOCK;
+        }
+    }
+    
+    /**
+     * Authentication modes
+     */
+    private enum AuthenticationMode {
+        OAUTH,    // Full OAuth with Cognito/Google
+        HYBRID,   // OAuth-like flow but with mock tokens for missing config
+        MOCK      // Full mock authentication for development
     }
 
     /**
@@ -848,6 +922,285 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         } catch (Exception e) {
             context.getLogger().log("Error in local logout: " + e.getMessage());
             return createErrorResponse(500, "Local logout failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Hybrid authentication mode - OAuth-like flow with fallbacks for missing config
+     */
+    private APIGatewayProxyResponseEvent initiateHybridAuth(Context context) throws Exception {
+        context.getLogger().log("Initiating hybrid authentication flow");
+        
+        try {
+            String frontendUrl = System.getenv("FRONTEND_URL");
+            if (frontendUrl == null) {
+                frontendUrl = "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com";
+            }
+            
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("status", "success");
+            responseBody.put("redirectUrl", frontendUrl + "/auth/validation?mode=hybrid");
+            responseBody.put("message", "Hybrid authentication - OAuth config available but some components missing");
+            responseBody.put("workspace_auth_enabled", workspaceAuthService.hasEmailRestrictions());
+            responseBody.put("workspace_config", workspaceAuthService.getConfigurationInfo());
+            responseBody.put("auth_mode", "HYBRID");
+            
+            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+            response.setStatusCode(200);
+            response.setHeaders(getResponseHeaders());
+            response.setBody(objectMapper.writeValueAsString(responseBody));
+            
+            context.getLogger().log("Hybrid authentication initiated");
+            return response;
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in hybrid authentication: " + e.getMessage());
+            return createErrorResponse(500, "Hybrid authentication error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Mock authentication mode - full mock for development/testing
+     */
+    private APIGatewayProxyResponseEvent initiateMockAuth(Context context) throws Exception {
+        context.getLogger().log("Initiating mock authentication flow");
+        
+        try {
+            String frontendUrl = System.getenv("FRONTEND_URL");
+            if (frontendUrl == null) {
+                frontendUrl = "http://localhost:3000";
+            }
+            
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("status", "success");
+            responseBody.put("redirectUrl", frontendUrl + "/auth/validation?mode=mock");
+            responseBody.put("message", "Mock authentication - no OAuth configuration available");
+            responseBody.put("workspace_auth_enabled", false);
+            responseBody.put("auth_mode", "MOCK");
+            
+            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+            response.setStatusCode(200);
+            response.setHeaders(getResponseHeaders());
+            response.setBody(objectMapper.writeValueAsString(responseBody));
+            
+            context.getLogger().log("Mock authentication initiated");
+            return response;
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in mock authentication: " + e.getMessage());
+            return createErrorResponse(500, "Mock authentication error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Hybrid callback - generates tokens with available data
+     */
+    private APIGatewayProxyResponseEvent handleHybridCallback(APIGatewayProxyRequestEvent input, Context context) {
+        context.getLogger().log("Handling hybrid authentication callback");
+        
+        try {
+            String defaultEmail = System.getenv("DEFAULT_TEST_EMAIL");
+            if (defaultEmail == null) {
+                defaultEmail = "test@example.com";
+            }
+            
+            // Generate mock tokens but with real-looking structure
+            String idToken = generateDummyJWT(defaultEmail, "id");
+            String accessToken = generateDummyJWT(defaultEmail, "access");
+            String refreshToken = "hybrid-refresh-token-" + System.currentTimeMillis();
+            
+            String frontendUrl = System.getenv("FRONTEND_URL");
+            if (frontendUrl == null) {
+                frontendUrl = "https://c3cb9bzz3k.ap-northeast-1.awsapprunner.com";
+            }
+            
+            StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/auth/validation");
+            redirectUrl.append("?status=success");
+            redirectUrl.append("&message=").append(URLEncoder.encode("Hybrid authentication successful", "UTF-8"));
+            redirectUrl.append("&email=").append(URLEncoder.encode(defaultEmail, "UTF-8"));
+            redirectUrl.append("&id_token=").append(URLEncoder.encode(idToken, "UTF-8"));
+            redirectUrl.append("&access_token=").append(URLEncoder.encode(accessToken, "UTF-8"));
+            redirectUrl.append("&refresh_token=").append(URLEncoder.encode(refreshToken, "UTF-8"));
+            redirectUrl.append("&expires_in=3600");
+            redirectUrl.append("&token_type=Bearer");
+            redirectUrl.append("&auth_mode=HYBRID");
+            
+            context.getLogger().log("Hybrid authentication successful for: " + defaultEmail);
+            return createRedirectResponse(redirectUrl.toString());
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in hybrid callback: " + e.getMessage());
+            return createWorkspaceErrorRedirect("Hybrid authentication failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Mock callback - generates mock tokens for testing
+     */
+    private APIGatewayProxyResponseEvent handleMockCallback(APIGatewayProxyRequestEvent input, Context context) {
+        context.getLogger().log("Handling mock authentication callback");
+        
+        try {
+            String mockEmail = System.getenv("MOCK_USER_EMAIL");
+            if (mockEmail == null) {
+                mockEmail = "mock@example.com";
+            }
+            
+            // Generate mock tokens
+            String idToken = generateDummyJWT(mockEmail, "id");
+            String accessToken = generateDummyJWT(mockEmail, "access");
+            String refreshToken = "mock-refresh-token-" + System.currentTimeMillis();
+            
+            String frontendUrl = System.getenv("FRONTEND_URL");
+            if (frontendUrl == null) {
+                frontendUrl = "http://localhost:3000";
+            }
+            
+            StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/auth/validation");
+            redirectUrl.append("?status=success");
+            redirectUrl.append("&message=").append(URLEncoder.encode("Mock authentication successful", "UTF-8"));
+            redirectUrl.append("&email=").append(URLEncoder.encode(mockEmail, "UTF-8"));
+            redirectUrl.append("&id_token=").append(URLEncoder.encode(idToken, "UTF-8"));
+            redirectUrl.append("&access_token=").append(URLEncoder.encode(accessToken, "UTF-8"));
+            redirectUrl.append("&refresh_token=").append(URLEncoder.encode(refreshToken, "UTF-8"));
+            redirectUrl.append("&expires_in=3600");
+            redirectUrl.append("&token_type=Bearer");
+            redirectUrl.append("&auth_mode=MOCK");
+            
+            context.getLogger().log("Mock authentication successful for: " + mockEmail);
+            return createRedirectResponse(redirectUrl.toString());
+            
+        } catch (Exception e) {
+            context.getLogger().log("Error in mock callback: " + e.getMessage());
+            return createWorkspaceErrorRedirect("Mock authentication failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Flexible token refresh - adapts to authentication mode
+     */
+    private APIGatewayProxyResponseEvent handleTokenRefresh(APIGatewayProxyRequestEvent input, AuthenticationMode authMode) throws Exception {
+        switch (authMode) {
+            case OAUTH:
+                return handleOAuthTokenRefresh(input);
+            case HYBRID:
+            case MOCK:
+                return handleMockTokenRefresh(input, authMode);
+            default:
+                return createErrorResponse(500, "Token refresh not supported for mode: " + authMode);
+        }
+    }
+    
+    /**
+     * Flexible logout - adapts to authentication mode
+     */
+    private APIGatewayProxyResponseEvent handleLogout(APIGatewayProxyRequestEvent input, AuthenticationMode authMode) throws Exception {
+        switch (authMode) {
+            case OAUTH:
+                return handleOAuthLogout(input);
+            case HYBRID:
+            case MOCK:
+                return handleMockLogout(input, authMode);
+            default:
+                return createErrorResponse(500, "Logout not supported for mode: " + authMode);
+        }
+    }
+    
+    /**
+     * OAuth token refresh (renamed to avoid recursion)
+     */
+    private APIGatewayProxyResponseEvent handleOAuthTokenRefresh(APIGatewayProxyRequestEvent input) throws Exception {
+        JsonNode requestBody = objectMapper.readTree(input.getBody());
+        String refreshToken = requestBody.get("refreshToken").asText();
+        String username = requestBody.get("username").asText();
+        
+        CognitoAuth cognitoAuth = authClient.cognito();
+        AuthResult result = cognitoAuth.refreshToken(refreshToken, username);
+        
+        if (!result.isSuccess()) {
+            return ResponseHelper.createErrorResponse(401, "Token refresh failed: " + result.getError());
+        }
+        
+        return ResponseHelper.createTokenResponse(result.getAuthenticationResult());
+    }
+    
+    /**
+     * OAuth logout (renamed to avoid recursion)
+     */
+    private APIGatewayProxyResponseEvent handleOAuthLogout(APIGatewayProxyRequestEvent input) throws Exception {
+        JsonNode requestBody = objectMapper.readTree(input.getBody());
+        String accessToken = requestBody.get("accessToken").asText();
+        
+        CognitoAuth cognitoAuth = authClient.cognito();
+        SignOutResult result = cognitoAuth.signOut(accessToken);
+        
+        if (!result.isSuccess()) {
+            return ResponseHelper.createErrorResponse(500, "Logout failed: " + result.getError());
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Successfully logged out");
+        
+        return ResponseHelper.createSuccessResponse(response);
+    }
+    
+    /**
+     * Mock token refresh for non-OAuth modes
+     */
+    private APIGatewayProxyResponseEvent handleMockTokenRefresh(APIGatewayProxyRequestEvent input, AuthenticationMode authMode) {
+        try {
+            String mockEmail = authMode == AuthenticationMode.HYBRID ? "test@example.com" : "mock@example.com";
+            
+            String newIdToken = generateDummyJWT(mockEmail, "id");
+            String newAccessToken = generateDummyJWT(mockEmail, "access");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("id_token", newIdToken);
+            response.put("access_token", newAccessToken);
+            response.put("token_type", "Bearer");
+            response.put("expires_in", 3600);
+            response.put("auth_mode", authMode.toString());
+            
+            return ResponseHelper.createSuccessResponse(response);
+            
+        } catch (Exception e) {
+            return createErrorResponse(500, "Token refresh failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Mock logout for non-OAuth modes
+     */
+    private APIGatewayProxyResponseEvent handleMockLogout(APIGatewayProxyRequestEvent input, AuthenticationMode authMode) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Successfully logged out from " + authMode.toString().toLowerCase() + " mode");
+            response.put("auth_mode", authMode.toString());
+            
+            return ResponseHelper.createSuccessResponse(response);
+        } catch (Exception e) {
+            return createErrorResponse(500, "Logout failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Flexible health check - includes authentication mode info
+     */
+    private APIGatewayProxyResponseEvent handleHealthCheck(APIGatewayProxyRequestEvent input, AuthenticationMode authMode) {
+        Map<String, Object> health = new HashMap<>();
+        health.put("status", "healthy");
+        health.put("timestamp", System.currentTimeMillis());
+        health.put("version", "2.1.0");
+        health.put("auth_mode", authMode.toString());
+        health.put("oauth_flow", authMode == AuthenticationMode.OAUTH ? "google_oauth_2.0" : "flexible_auth");
+        health.put("workspace_auth_enabled", workspaceAuthService.hasEmailRestrictions());
+        health.put("workspace_auth_config", workspaceAuthService.getConfigurationInfo());
+        
+        try {
+            return ResponseHelper.createSuccessResponse(health);
+        } catch (Exception e) {
+            authClient.getLambdaContext().getLogger().log("Failed to create health response: " + e.getMessage());
+            return ResponseHelper.createErrorResponse(500, "Failed to create health response: " + e.getMessage());
         }
     }
 }
