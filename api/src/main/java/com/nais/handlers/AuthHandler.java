@@ -339,7 +339,7 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             if (redirectUri == null) {
                 redirectUri = System.getenv("OAUTH_CALLBACK_URL"); // fallback to old name
                 if (redirectUri == null) {
-                    redirectUri = "https://u7ipl8kq14.execute-api.ap-northeast-1.amazonaws.com/dev/auth/google/callback"; // fallback
+                    redirectUri = "https://91xl0mky4e-vpce-03e2fb9671d9d8aed.execute-api.ap-northeast-1.amazonaws.com/dev/auth/google/callback"; // fallback
                 }
             }
             context.getLogger().log("Using redirect URI: " + redirectUri);
