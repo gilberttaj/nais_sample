@@ -9,7 +9,7 @@ build:
     - name: AWS_DEFAULT_REGION
       value: ap-northeast-1
 run:
-  runtime-version: 18
+  runtime-version: 18.20
   command: serve -s dist -p 8080
   network:
     port: 8080
