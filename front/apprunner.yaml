@@ -2,16 +2,14 @@ version: 1.0
 runtime: nodejs18
 build:
   commands:
-    build:
-      - npm install
-      - npm run build
+    pre-build:
+      - npm install -g serve
+      - aws s3 sync s3://nais-frontend-builds/latest/ ./dist/
   env:
-    - name: VITE_API_URL
-      value: $VITE_API_URL
-    - name: VITE_APP_ENV  
-      value: production
+    - name: AWS_DEFAULT_REGION
+      value: ap-northeast-1
 run:
   runtime-version: 18
-  command: npm run preview
+  command: serve -s dist -p 8080
   network:
     port: 8080
