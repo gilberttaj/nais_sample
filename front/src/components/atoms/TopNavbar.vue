@@ -27,6 +27,10 @@
     </div> -->
     
     <div class="flex items-center space-x-4">
+      <div v-if="showAdminMode" class="inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-full bg-green-100 text-green-600 border border-green-200">
+        <i class="fas fa-circle text-green-400 mr-2"></i>
+        管理者モード
+      </div>
       <button 
         class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 text-gray-500 bg-white border-2 border-gray-200 shadow-sm hover:bg-gray-50"
         @click="$emit('logout')"
@@ -41,6 +45,21 @@
 <script setup>
 import { computed } from 'vue'
 import router from '@/router'
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+const adminRouteNames = [
+  'Detail',
+  'RegisterEditPage',
+  'RegisterEditConfirmationPage',
+  'RegisterEditCompletePage',
+  'RegisterPage',
+  'RegisterConfirmationPage',
+  'RegisterCompletePage'
+];
+
+const showAdminMode = computed(() => adminRouteNames.includes(route.name));
 
 const props = defineProps({
   modelValue: {

@@ -24,32 +24,6 @@
         </span>
         <span class="text-gray-900 font-medium">編集</span>
       </nav>
-      
-      <!-- Header Card -->
-      <div class="bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white rounded-2xl p-8 mb-8 shadow-2xl shadow-indigo-500/30">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mr-6">
-              <i class="fas fa-eye text-2xl text-white"></i>
-            </div>
-            <div>
-              <h1 class="text-3xl font-bold text-white mb-2">NAISメール宛先マスター</h1>
-              <p class="text-white text-opacity-90">業務メール配信設定 - 詳細表示</p>
-            </div>
-          </div>
-          <div class="flex items-center space-x-4">
-            <div :class="[
-              'inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-full uppercase tracking-wide border',
-              detailData.isActive 
-                ? 'bg-green-100 text-green-600 border-green-200' 
-                : 'bg-red-100 text-red-600 border-red-200'
-            ]">
-              <i :class="['mr-2', detailData.isActive ? 'fas fa-check-circle' : 'fas fa-times-circle']"></i>
-              {{ detailData.isActive ? 'アクティブ' : '非アクティブ' }}
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- 詳細情報表示 -->
       <form @submit.prevent="handleSubmit" class="space-y-8">

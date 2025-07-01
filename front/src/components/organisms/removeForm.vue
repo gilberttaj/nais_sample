@@ -1,27 +1,6 @@
 <template>
   <div class="">
     <div class="">
-      
-      <!-- Header Card -->
-      <div class="bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white rounded-2xl p-8 mb-8 shadow-2xl shadow-indigo-500/30">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mr-6">
-              <i class="fas fa-envelope-circle-check text-2xl text-white"></i>
-            </div>
-            <div>
-              <h1 class="text-3xl font-bold text-white mb-2">NAISメール宛先マスター</h1>
-              <p class="text-white text-opacity-90">業務メール配信設定管理システム</p>
-            </div>
-          </div>
-          <div class="flex items-center space-x-4">
-            <div class="inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-full bg-green-100 text-green-600 border border-green-200">
-              <i class="fas fa-circle text-green-400 mr-2"></i>
-              管理者モード
-            </div>
-          </div>
-        </div>
-      </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-8">
         
