@@ -612,6 +612,84 @@ Resources:
         Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AmplifyAuthFunction.Arn}/invocations'
 
   # ========================================
+  # Customer API Resources
+  # ========================================
+  
+  # Root /customer resource
+  CustomerResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !GetAtt NaisRestApi.RootResourceId
+      PathPart: customer
+
+  # GET /customer (all customers)
+  CustomerGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref CustomerResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerFunction.Arn}/invocations'
+
+  CustomerGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref CustomerResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerFunction.Arn}/invocations'
+
+  # /customer/{code} resource
+  CustomerCodeResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref CustomerResource
+      PathPart: '{code}'
+
+  # GET /customer/{code} (specific customer)
+  CustomerCodeGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref CustomerCodeResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.code: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.code: method.request.path.code
+
+  CustomerCodeGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref CustomerCodeResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.code: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.code: method.request.path.code
+
+  # ========================================
   # Lambda Permission and Deployment (RETAINED from original)
   # ========================================
   
@@ -619,6 +697,14 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref AmplifyAuthFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*'
+
+  CustomerLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CustomerFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*'
@@ -642,6 +728,10 @@ Resources:
       - TokenRefreshOptionsMethod
       - LogoutMethod
       - LogoutOptionsMethod
+      - CustomerGetMethod
+      - CustomerGetOptionsMethod
+      - CustomerCodeGetMethod
+      - CustomerCodeGetOptionsMethod
     Properties:
       RestApiId: !Ref NaisRestApi
       StageName: !Ref Stage
@@ -706,41 +796,6 @@ Resources:
         Application: Nais
         Environment: !Ref Stage
         Component: CustomerAPI
-        
-      Events:
-        # Get all customers
-        GetAllCustomers:
-          Type: Api
-          Properties:
-            RestApiId: !Ref NaisRestApi
-            Path: /customer
-            Method: GET
-            Auth:
-              Authorizer: NONE
-        
-        GetAllCustomersOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref NaisRestApi
-            Path: /customer
-            Method: OPTIONS
-        
-        # Get customer by code
-        GetCustomerByCode:
-          Type: Api
-          Properties:
-            RestApiId: !Ref NaisRestApi
-            Path: /customer/{code}
-            Method: GET
-            Auth:
-              Authorizer: NONE
-            
-        GetCustomerByCodeOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref NaisRestApi
-            Path: /customer/{code}
-            Method: OPTIONS
 
   CustomerLogGroup:
     Type: AWS::Logs::LogGroup
