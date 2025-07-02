@@ -662,7 +662,7 @@ Resources:
     Properties:
       FunctionName: !Sub 'Nais-CustomerAPI-${Stage}'
       Description: !Sub 'Customer Master API for NAIS system (${Stage})'
-      CodeUri: target/amplify-auth-lambda.jar
+      CodeUri: ./
       Handler: com.nais.handlers.CustomerHandler::handleRequest
       Runtime: java11
       MemorySize: !If [IsProduction, 1024, 512]
