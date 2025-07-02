@@ -102,7 +102,7 @@ public class MailApiConfigHandler implements RequestHandler<APIGatewayProxyReque
     private boolean validateCognitoToken(String token, Context context) {
         try {
             // Simple JWT structure validation
-            String[] parts = token.split("\\\\.");
+            String[] parts = token.split("\\.");
             if (parts.length != 3) {
                 context.getLogger().log("Invalid JWT format");
                 return false;
