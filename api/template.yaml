@@ -653,6 +653,97 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/Nais-AmplifyAuth-WorkspaceValidation-${Stage}'
       RetentionInDays: !If [IsProduction, 30, 7]
 
+  # ========================================
+  # Customer Master API Function
+  # ========================================
+  
+  CustomerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'Nais-CustomerAPI-${Stage}'
+      Description: !Sub 'Customer Master API for NAIS system (${Stage})'
+      CodeUri: target/amplify-auth-lambda.jar
+      Handler: com.nais.handlers.CustomerHandler::handleRequest
+      Runtime: java11
+      MemorySize: !If [IsProduction, 1024, 512]
+      Timeout: !If [IsProduction, 60, 30]
+      
+      # VpcConfig (if needed for database access)
+      # VpcConfig:
+      #   SecurityGroupIds:
+      #     - !Ref AmplifyAuthSecurityGroup
+      #   SubnetIds:
+      #     - !Ref SubnetId1
+      #     - !Ref SubnetId2
+      
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # - VPCAccessPolicy: {}
+        - Statement:
+            - Sid: CloudWatchLogsAccess
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+      
+      Environment:
+        Variables:
+          # Database Configuration
+          DB_URL: !Sub 'jdbc:postgresql://${DBHost}:${DBPort}/${DBName}'
+          DB_USER: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+          
+          # Authentication Configuration (use OAUTH for production)
+          AUTH_MODE: OAUTH
+          
+          # App Configuration
+          STAGE: !Ref Stage
+          AUTH_LIBRARY_VERSION: '2.1.0'
+      
+      Tags:
+        Application: Nais
+        Environment: !Ref Stage
+        Component: CustomerAPI
+        
+      Events:
+        # Get all customers
+        GetAllCustomers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NaisRestApi
+            Path: /customer
+            Method: GET
+        
+        GetAllCustomersOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NaisRestApi
+            Path: /customer
+            Method: OPTIONS
+        
+        # Get customer by code
+        GetCustomerByCode:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NaisRestApi
+            Path: /customer/{code}
+            Method: GET
+            
+        GetCustomerByCodeOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NaisRestApi
+            Path: /customer/{code}
+            Method: OPTIONS
+
+  CustomerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/Nais-CustomerAPI-${Stage}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
 Outputs:
   AmplifyAuthFunctionArn:
     Description: Amplify-like Authentication Lambda Function ARN with Workspace Validation

@@ -22,7 +22,7 @@ const fetchConfigFromAPI = async () => {
 
 const getConfigFromEnv = () => {
   return {
-    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000',
     secureLsKey: import.meta.env.VITE_SECURE_LS_KEY || 'development-encryption-key-32-chars-minimum',
     appName: import.meta.env.VITE_APP_NAME || 'NAIS Application',
     appVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',

@@ -42,9 +42,20 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
 
     public AuthHandler() {
         this.objectMapper = new ObjectMapper();
-        this.secretsManagerClient = SecretsManagerClient.builder()
-            .httpClient(UrlConnectionHttpClient.builder().build())
-            .build();
+        // Only initialize SecretsManagerClient if needed (not in local/mock mode)
+        String authMode = System.getenv("AUTH_MODE");
+        if (!"MOCK".equalsIgnoreCase(authMode)) {
+            try {
+                this.secretsManagerClient = SecretsManagerClient.builder()
+                    .httpClient(UrlConnectionHttpClient.builder().build())
+                    .build();
+            } catch (Exception e) {
+                System.err.println("Warning: Could not initialize SecretsManagerClient: " + e.getMessage());
+                this.secretsManagerClient = null;
+            }
+        } else {
+            this.secretsManagerClient = null;
+        }
     }
 
     @Override
@@ -71,9 +82,14 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             this.authClient = new AuthClient(context);
             
             String secretName = System.getenv("SECRET_NAME");
-            this.workspaceAuthService = new WorkspaceAuthService(secretsManagerClient, secretName, context);
-            
-            context.getLogger().log("AuthHandler initialized with proper OAuth flow and workspace validation");
+            if (secretsManagerClient != null) {
+                this.workspaceAuthService = new WorkspaceAuthService(secretsManagerClient, secretName, context);
+                context.getLogger().log("AuthHandler initialized with proper OAuth flow and workspace validation");
+            } else {
+                // Create a mock workspace service for local development
+                this.workspaceAuthService = new MockWorkspaceAuthService(context);
+                context.getLogger().log("AuthHandler initialized with mock workspace service for local development");
+            }
         }
     }
 
@@ -1104,24 +1120,26 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
             String accessToken = generateDummyJWT(mockEmail, "access");
             String refreshToken = "mock-refresh-token-" + System.currentTimeMillis();
             
-            String frontendUrl = System.getenv("FRONTEND_URL");
-            if (frontendUrl == null) {
-                frontendUrl = "http://localhost:3000";
-            }
-            
-            StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/auth/validation");
-            redirectUrl.append("?status=success");
-            redirectUrl.append("&message=").append(URLEncoder.encode("Mock authentication successful", "UTF-8"));
-            redirectUrl.append("&email=").append(URLEncoder.encode(mockEmail, "UTF-8"));
-            redirectUrl.append("&id_token=").append(URLEncoder.encode(idToken, "UTF-8"));
-            redirectUrl.append("&access_token=").append(URLEncoder.encode(accessToken, "UTF-8"));
-            redirectUrl.append("&refresh_token=").append(URLEncoder.encode(refreshToken, "UTF-8"));
-            redirectUrl.append("&expires_in=3600");
-            redirectUrl.append("&token_type=Bearer");
-            redirectUrl.append("&auth_mode=MOCK");
+            // For local development, return JSON response instead of redirect
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Mock authentication successful");
+            response.put("email", mockEmail);
+            response.put("id_token", idToken);
+            response.put("access_token", accessToken);
+            response.put("refresh_token", refreshToken);
+            response.put("expires_in", 3600);
+            response.put("token_type", "Bearer");
+            response.put("auth_mode", "MOCK");
             
             context.getLogger().log("Mock authentication successful for: " + mockEmail);
-            return createRedirectResponse(redirectUrl.toString());
+            
+            APIGatewayProxyResponseEvent apiResponse = new APIGatewayProxyResponseEvent();
+            apiResponse.setStatusCode(200);
+            apiResponse.setHeaders(getResponseHeaders());
+            apiResponse.setBody(objectMapper.writeValueAsString(response));
+            
+            return apiResponse;
             
         } catch (Exception e) {
             context.getLogger().log("Error in mock callback: " + e.getMessage());
@@ -1254,6 +1272,40 @@ public class AuthHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         } catch (Exception e) {
             authClient.getLambdaContext().getLogger().log("Failed to create health response: " + e.getMessage());
             return ResponseHelper.createErrorResponse(500, "Failed to create health response: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Mock workspace service for local development
+     */
+    private static class MockWorkspaceAuthService extends WorkspaceAuthService {
+        private final Context context;
+        
+        public MockWorkspaceAuthService(Context context) {
+            super(null, null, context);
+            this.context = context;
+        }
+        
+        @Override
+        public boolean hasEmailRestrictions() {
+            return false; // No restrictions in mock mode
+        }
+        
+        @Override
+        public String getConfigurationInfo() {
+            return "Mock workspace service - no restrictions";
+        }
+        
+        @Override
+        public String getSecretValue(String secretName) throws Exception {
+            context.getLogger().log("Mock mode: getSecretValue called for " + secretName);
+            return "{}"; // Return empty JSON for mock mode
+        }
+        
+        @Override
+        public EmailValidationResult validateUserAccess(String email) {
+            context.getLogger().log("Mock mode: validateUserAccess for " + email);
+            return EmailValidationResult.valid("Mock mode - all emails allowed", email);
         }
     }
 }

@@ -4,26 +4,48 @@ Description: 'Local Development Template for Nais Auth Handler'
 
 Globals:
   Function:
-    Timeout: 30
-    MemorySize: 512
+    Timeout: 60
+    MemorySize: 1024
     Runtime: java11
 
 Resources:
   AuthFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./
+      CodeUri: target/amplify-auth-lambda.jar
       Handler: com.nais.handlers.AuthHandler::handleRequest
       Environment:
         Variables:
-          ENVIRONMENT: local
-          LOCAL_MODE: true
-          LOCAL_DEV_EMAIL: dev@example.com
-          LOCAL_FRONTEND_URL: http://localhost:3000
+          # Flexible Authentication Configuration
+          AUTH_MODE: MOCK  # Override auto-detection for local dev
+          STAGE: dev
           AUTH_LIBRARY_VERSION: 2.1.0
           AUTH_ARCHITECTURE: amplify-like
-          WORKSPACE_AUTH_ENABLED: true
-          STAGE: dev
+          
+          # Frontend Configuration
+          FRONTEND_URL: http://localhost:5173
+          LOCAL_FRONTEND_URL: http://localhost:5173
+          
+          # Development/Testing Configuration
+          LOCAL_DEV_EMAIL: dev@example.com
+          DEFAULT_TEST_EMAIL: test@example.com
+          MOCK_USER_EMAIL: mock@example.com
+          
+          # Workspace Configuration (minimal for local dev)
+          WORKSPACE_AUTH_ENABLED: false
+          ALLOWED_EMAIL_DOMAINS: example.com,localhost
+          
+          # Prevent AWS SDK calls in local mode
+          AWS_ACCESS_KEY_ID: dummy
+          AWS_SECRET_ACCESS_KEY: dummy
+          AWS_DEFAULT_REGION: us-east-1
+          
+          # Optional: OAuth config for testing OAUTH/HYBRID modes
+          # Uncomment these to test with real OAuth:
+          # SECRET_NAME: your-local-secret-name
+          # CLIENT_ID: your-test-client-id
+          # GOOGLE_CLIENT_ID: your-test-google-client-id
+          # COGNITO_DOMAIN_URL: your-test-cognito-domain
       Events:
         # Health check
         HealthCheck:
@@ -31,6 +53,10 @@ Resources:
           Properties:
             Path: /auth/health
             Method: get
+            Cors:
+              AllowMethods: "'GET,POST,OPTIONS'"
+              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              AllowOrigin: "'*'"
         HealthCheckOptions:
           Type: Api
           Properties:
@@ -43,6 +69,10 @@ Resources:
           Properties:
             Path: /auth/google/login
             Method: get
+            Cors:
+              AllowMethods: "'GET,POST,OPTIONS'"
+              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              AllowOrigin: "'*'"
         GoogleLoginOptions:
           Type: Api
           Properties:
@@ -55,6 +85,10 @@ Resources:
           Properties:
             Path: /auth/google/callback
             Method: get
+            Cors:
+              AllowMethods: "'GET,POST,OPTIONS'"
+              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              AllowOrigin: "'*'"
         GoogleCallbackOptions:
           Type: Api
           Properties:
@@ -95,6 +129,57 @@ Resources:
           Type: Api
           Properties:
             Path: /auth/workspace/domains
+            Method: options
+
+  # Customer Master API Function
+  CustomerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/amplify-auth-lambda.jar
+      Handler: com.nais.handlers.CustomerHandler::handleRequest
+      Environment:
+        Variables:
+          # Database Configuration
+          DB_URL: jdbc:postgresql://host.docker.internal:5432/gleamorb_db
+          DB_USER: postgres
+          DB_PASSWORD: password
+          
+          # Authentication Configuration
+          AUTH_MODE: MOCK
+          
+          # App Configuration
+          STAGE: dev
+      Events:
+        # Get all customers
+        GetAllCustomers:
+          Type: Api
+          Properties:
+            Path: /customer
+            Method: get
+            Cors:
+              AllowMethods: "'GET,POST,OPTIONS'"
+              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              AllowOrigin: "'*'"
+        GetAllCustomersOptions:
+          Type: Api
+          Properties:
+            Path: /customer
+            Method: options
+        
+        # Get customer by code
+        GetCustomerByCode:
+          Type: Api
+          Properties:
+            Path: /customer/{code}
+            Method: get
+            Cors:
+              AllowMethods: "'GET,POST,OPTIONS'"
+              AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              AllowOrigin: "'*'"
+        GetCustomerByCodeOptions:
+          Type: Api
+          Properties:
+            Path: /customer/{code}
             Method: options
 
 Outputs:
