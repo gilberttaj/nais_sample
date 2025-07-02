@@ -715,6 +715,8 @@ Resources:
             RestApiId: !Ref NaisRestApi
             Path: /customer
             Method: GET
+            Auth:
+              Authorizer: NONE
         
         GetAllCustomersOptions:
           Type: Api
@@ -730,6 +732,8 @@ Resources:
             RestApiId: !Ref NaisRestApi
             Path: /customer/{code}
             Method: GET
+            Auth:
+              Authorizer: NONE
             
         GetCustomerByCodeOptions:
           Type: Api
