@@ -57,6 +57,9 @@ export const useAuthStore = defineStore('auth', () => {
       const tokenType = ls.get('token_type')
       const expirationTime = ls.get('token_expiration')
 
+      console.log('id_token', idToken)
+      console.log('accessToken', accessToken)
+
       if (accessToken && expirationTime) {
         tokens.value = {
           idToken,
