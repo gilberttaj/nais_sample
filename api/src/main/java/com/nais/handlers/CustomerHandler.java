@@ -70,6 +70,9 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             if (authHeader == null) {
                 authHeader = headers.get("authorization"); // case-insensitive
             }
+            if (authHeader == null) {
+                authHeader = headers.get("X-Auth-Token"); // fallback for API Gateway issues
+            }
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 context.getLogger().log("No valid Authorization header");

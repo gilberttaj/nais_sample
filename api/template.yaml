@@ -299,6 +299,10 @@ Resources:
             Condition:
               StringEquals:
                 aws:SourceVpce: !Ref ApiGatewayVpcEndpointId
+          - Effect: Allow
+            Principal: '*'
+            Action: execute-api:Invoke
+            Resource: !Sub 'execute-api:/${Stage}/GET/customer*'
 
   # Cognito Authorizer (retained from original)
   AmplifyAuthAuthorizer:
