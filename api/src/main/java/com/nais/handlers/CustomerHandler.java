@@ -231,17 +231,26 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
         String dbUser = System.getenv("DB_USER");
         String dbPassword = System.getenv("DB_PASSWORD");
         
+        // Log environment variables for debugging (mask password)
+        System.out.println("DB_URL from env: " + dbUrl);
+        System.out.println("DB_USER from env: " + dbUser);
+        System.out.println("DB_PASSWORD from env: " + (dbPassword != null ? "***set***" : "null"));
+        
         // Default values for local development
         if (dbUrl == null) {
             dbUrl = "jdbc:postgresql://localhost:5432/nais";
+            System.out.println("Using default DB_URL: " + dbUrl);
         }
         if (dbUser == null) {
             dbUser = "postgres";
+            System.out.println("Using default DB_USER: " + dbUser);
         }
         if (dbPassword == null) {
             dbPassword = "password";
+            System.out.println("Using default DB_PASSWORD");
         }
 
+        System.out.println("Attempting to connect to: " + dbUrl + " with user: " + dbUser);
         return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
     }
 
