@@ -762,17 +762,17 @@ Resources:
       MemorySize: !If [IsProduction, 1024, 512]
       Timeout: !If [IsProduction, 60, 30]
       
-      # VpcConfig (if needed for database access)
-      # VpcConfig:
-      #   SecurityGroupIds:
-      #     - !Ref AmplifyAuthSecurityGroup
-      #   SubnetIds:
-      #     - !Ref SubnetId1
-      #     - !Ref SubnetId2
+      # VpcConfig (needed for database access)
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref AmplifyAuthSecurityGroup
+        SubnetIds:
+          - !Ref SubnetId1
+          - !Ref SubnetId2
       
       Policies:
         - AWSLambdaBasicExecutionRole
-        # - VPCAccessPolicy: {}
+        - VPCAccessPolicy
         - Statement:
             - Sid: CloudWatchLogsAccess
               Effect: Allow
