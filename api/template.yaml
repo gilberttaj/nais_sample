@@ -698,6 +698,162 @@ Resources:
           integration.request.path.code: method.request.path.code
 
   # ========================================
+  # Mail To Child API Resources
+  # ========================================
+  
+  # Root /mail-to-child resource
+  MailToChildResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !GetAtt NaisRestApi.RootResourceId
+      PathPart: mail-to-child
+
+  # GET /mail-to-child (all records)
+  MailToChildGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailToChildResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations'
+
+  MailToChildGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailToChildResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations'
+
+  # /mail-to-child/{mailing_list_id} resource
+  MailToChildListIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref MailToChildResource
+      PathPart: '{mailing_list_id}'
+
+  # GET /mail-to-child/{mailing_list_id} (specific mailing list)
+  MailToChildListIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailToChildListIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+
+  MailToChildListIdGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailToChildListIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+
+  # ========================================
+  # Mail API Config Resources
+  # ========================================
+  
+  # Root /mail-api-config resource
+  MailApiConfigResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !GetAtt NaisRestApi.RootResourceId
+      PathPart: mail-api-config
+
+  # GET /mail-api-config (all records)
+  MailApiConfigGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailApiConfigResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations'
+
+  MailApiConfigGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailApiConfigResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations'
+
+  # /mail-api-config/{job_id} resource
+  MailApiConfigJobIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ParentId: !Ref MailApiConfigResource
+      PathPart: '{job_id}'
+
+  # GET /mail-api-config/{job_id} (specific job)
+  MailApiConfigJobIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailApiConfigJobIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.job_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.job_id: method.request.path.job_id
+
+  MailApiConfigJobIdGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NaisRestApi
+      ResourceId: !Ref MailApiConfigJobIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.job_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations'
+        RequestParameters:
+          integration.request.path.job_id: method.request.path.job_id
+
+  # ========================================
   # Lambda Permission and Deployment (RETAINED from original)
   # ========================================
   
@@ -713,6 +869,22 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref CustomerFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*'
+
+  MailToChildLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MailToChildFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*'
+
+  MailApiConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MailApiConfigFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*'
@@ -740,6 +912,14 @@ Resources:
       - CustomerGetOptionsMethod
       - CustomerCodeGetMethod
       - CustomerCodeGetOptionsMethod
+      - MailToChildGetMethod
+      - MailToChildGetOptionsMethod
+      - MailToChildListIdGetMethod
+      - MailToChildListIdGetOptionsMethod
+      - MailApiConfigGetMethod
+      - MailApiConfigGetOptionsMethod
+      - MailApiConfigJobIdGetMethod
+      - MailApiConfigJobIdGetOptionsMethod
     Properties:
       RestApiId: !Ref NaisRestApi
       StageName: !Ref Stage
@@ -809,6 +989,126 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/Nais-CustomerAPI-${Stage}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  # ========================================
+  # Mail To Child Master API Function
+  # ========================================
+  
+  MailToChildFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'Nais-MailToChildAPI-${Stage}'
+      Description: !Sub 'Mail To Child Master API for NAIS system (${Stage})'
+      CodeUri: ./
+      Handler: com.nais.handlers.MailToChildHandler::handleRequest
+      Runtime: java11
+      MemorySize: !If [IsProduction, 1024, 512]
+      Timeout: !If [IsProduction, 60, 30]
+      
+      # VpcConfig (needed for database access)
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroupId
+        SubnetIds:
+          - !Ref SubnetId1
+          - !Ref SubnetId2
+      
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - VPCAccessPolicy: {}
+        - Statement:
+            - Sid: CloudWatchLogsAccess
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+      
+      Environment:
+        Variables:
+          # Database Configuration
+          DB_URL: !Sub 'jdbc:postgresql://${DBHost}:${DBPort}/${DBName}'
+          DB_USER: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+          
+          # Authentication Configuration (use OAUTH for production)
+          AUTH_MODE: OAUTH
+          
+          # App Configuration
+          STAGE: !Ref Stage
+          AUTH_LIBRARY_VERSION: '2.1.0'
+      
+      Tags:
+        Application: Nais
+        Environment: !Ref Stage
+        Component: MailToChildAPI
+
+  MailToChildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/Nais-MailToChildAPI-${Stage}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  # ========================================
+  # Mail API Config Master API Function
+  # ========================================
+  
+  MailApiConfigFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'Nais-MailApiConfigAPI-${Stage}'
+      Description: !Sub 'Mail API Config Master API for NAIS system (${Stage})'
+      CodeUri: ./
+      Handler: com.nais.handlers.MailApiConfigHandler::handleRequest
+      Runtime: java11
+      MemorySize: !If [IsProduction, 1024, 512]
+      Timeout: !If [IsProduction, 60, 30]
+      
+      # VpcConfig (needed for database access)
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroupId
+        SubnetIds:
+          - !Ref SubnetId1
+          - !Ref SubnetId2
+      
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - VPCAccessPolicy: {}
+        - Statement:
+            - Sid: CloudWatchLogsAccess
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+      
+      Environment:
+        Variables:
+          # Database Configuration
+          DB_URL: !Sub 'jdbc:postgresql://${DBHost}:${DBPort}/${DBName}'
+          DB_USER: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+          
+          # Authentication Configuration (use OAUTH for production)
+          AUTH_MODE: OAUTH
+          
+          # App Configuration
+          STAGE: !Ref Stage
+          AUTH_LIBRARY_VERSION: '2.1.0'
+      
+      Tags:
+        Application: Nais
+        Environment: !Ref Stage
+        Component: MailApiConfigAPI
+
+  MailApiConfigLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/Nais-MailApiConfigAPI-${Stage}'
       RetentionInDays: !If [IsProduction, 30, 7]
 
 Outputs:

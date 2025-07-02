@@ -1,3 +1,4 @@
+com\nais\handlers\MailToChildHandler.class
 com\nais\auth\validators\EmailValidator.class
 com\nais\handlers\AuthResult.class
 com\nais\handlers\CurrentUser.class
@@ -9,6 +10,7 @@ com\nais\handlers\GoogleUserInfo.class
 com\nais\handlers\ResponseHelper.class
 com\nais\auth\services\WorkspaceAuthService.class
 com\nais\handlers\AuthHandler.class
+com\nais\handlers\MailApiConfigHandler.class
 com\nais\handlers\TokenExchangeResult.class
 com\nais\handlers\AuthHandler$MockWorkspaceAuthService.class
 com\nais\handlers\AuthHandler$1.class

@@ -1,8 +1,10 @@
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\ResponseHelper.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\auth\validators\EmailValidationResult.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\AuthClient.java
+C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\MailApiConfigHandler.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\CognitoAuth.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\AuthResult.java
+C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\MailToChildHandler.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\auth\services\WorkspaceAuthService.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\GoogleAuth.java
 C:\Users\ASUS\Desktop\HIPe\GleamOrb\nais_sample\api\src\main\java\com\nais\handlers\GoogleUserInfo.java
