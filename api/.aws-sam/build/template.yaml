@@ -294,6 +294,11 @@ Resources:
             StringEquals:
               aws:SourceVpce:
                 Ref: ApiGatewayVpcEndpointId
+        - Effect: Allow
+          Principal: '*'
+          Action: execute-api:Invoke
+          Resource:
+            Fn::Sub: execute-api:/${Stage}/GET/customer*
   AmplifyAuthAuthorizer:
     Type: AWS::ApiGateway::Authorizer
     Properties:
