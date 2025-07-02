@@ -92,9 +92,19 @@ sam local start-api --template-file template-local.yaml --env-vars env.json --po
 ### 3. Verify Setup
 Open your browser and test these endpoints:
 
+**Authentication Endpoints:**
 - **Health Check**: http://127.0.0.1:8080/auth/health
 - **Login**: http://127.0.0.1:8080/auth/google/login
 - **Callback**: http://127.0.0.1:8080/auth/google/callback
+
+**Customer API Endpoints (requires Bearer token):**
+```bash
+# Test with mock token
+curl -H "Authorization: Bearer mock-token-123" http://127.0.0.1:8080/customer
+
+# Test specific customer
+curl -H "Authorization: Bearer mock-token-123" http://127.0.0.1:8080/customer/C001
+```
 
 ## Development Scripts
 
@@ -132,26 +142,42 @@ Open your browser and test these endpoints:
 
 ### How It Works
 
-In local development mode, the API automatically detects the environment and uses dummy authentication instead of real Google OAuth:
+In local development mode, the API automatically detects the environment and uses flexible authentication modes:
 
-1. **Detection**: API checks for `ENVIRONMENT=local` or `LOCAL_MODE=true`
-2. **Dummy Tokens**: Generates valid JWT tokens with test data
-3. **No External Dependencies**: No AWS/Cognito/Google services required
+1. **Auto-Detection**: API checks available configuration and selects authentication mode:
+   - **MOCK**: No external services (local development)
+   - **HYBRID**: Partial configuration available
+   - **OAUTH**: Full production configuration
+2. **Mock Mode**: Uses dummy JWT tokens for local development
+3. **No External Dependencies**: In MOCK mode, no AWS/Cognito/Google services required
 
-### API Endpoints
+### Authentication API Endpoints
 
 | Endpoint | Method | Description | Response |
 |----------|--------|-------------|----------|
-| `/auth/health` | GET | Health check with local mode indicator | JSON status |
-| `/auth/google/login` | GET | Initiate authentication (returns dummy response) | JSON with `local_mode: true` |
-| `/auth/google/callback` | GET | OAuth callback (returns dummy tokens) | JSON with tokens |
-| `/auth/token/refresh` | POST | Refresh tokens (returns new dummy tokens) | JSON with new tokens |
-| `/auth/logout` | POST | Logout (dummy response) | JSON success message |
+| `/auth/health` | GET | Health check with authentication mode indicator | JSON status |
+| `/auth/google/login` | GET | Initiate authentication (returns dummy response in MOCK mode) | JSON with `local_mode: true` |
+| `/auth/google/callback` | GET | OAuth callback (returns dummy tokens in MOCK mode) | JSON with tokens |
+| `/auth/token/refresh` | POST | Refresh tokens (returns new dummy tokens in MOCK mode) | JSON with new tokens |
+| `/auth/logout` | POST | Logout (dummy response in MOCK mode) | JSON success message |
+| `/auth/workspace/domains` | GET | Get allowed workspace domains | JSON with domain list |
 
-### Example Token Response
+### Customer API Endpoints
+
+| Endpoint | Method | Description | Authentication Required |
+|----------|--------|-------------|------------------------|
+| `/customer` | GET | Get all customers | Bearer token |
+| `/customer/{code}` | GET | Get customer by code | Bearer token |
+
+## Bearer Tokens for Local Development
+
+### AuthHandler Tokens (MOCK Mode)
+
+When `AUTH_MODE=MOCK`, the AuthHandler generates dummy JWT tokens. Example response from `/auth/google/callback`:
+
 ```json
 {
-  "status": "success",
+  "status": "success", 
   "message": "Local development authentication successful",
   "email": "dev@example.com",
   "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -161,6 +187,47 @@ In local development mode, the API automatically detects the environment and use
   "token_type": "Bearer",
   "local_mode": true
 }
+```
+
+### CustomerHandler Tokens (MOCK Mode)
+
+For Customer API endpoints in local development, use any of these Bearer tokens:
+
+**Option 1 - JWT-like tokens (starts with "eyJ"):**
+```bash
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" \
+     http://localhost:3000/customer
+```
+
+**Option 2 - Mock tokens (contains "mock"):**
+```bash
+curl -H "Authorization: Bearer mock-token-123" \
+     http://localhost:3000/customer
+```
+
+**Option 3 - Dummy tokens (contains "dummy"):**
+```bash
+curl -H "Authorization: Bearer dummy-auth-token" \
+     http://localhost:3000/customer/C001
+```
+
+### Production Tokens
+
+For production endpoints, use real Cognito JWT tokens obtained from the authentication flow:
+
+```bash
+# Production Customer API
+curl -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE..." \
+     https://your-api-gateway-url/prod/customer
+```
+
+### Database Setup
+
+Before testing Customer API endpoints, ensure PostgreSQL is running with sample data:
+
+```bash
+# Connect to PostgreSQL and run the setup
+psql -h localhost -U postgres -d gleamorb_db -f customer_setup.sql
 ```
 
 ## Configuration
