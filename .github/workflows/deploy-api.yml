@@ -58,6 +58,7 @@ jobs:
         SUBNET_ID_1_VAL: ${{ secrets.SUBNET_ID_1 }}
         SUBNET_ID_2_VAL: ${{ secrets.SUBNET_ID_2 }}
         API_GW_VPC_ENDPOINT_VAL: ${{ secrets.API_GATEWAY_VPC_ENDPOINT_ID }}
+        LAMBDA_SECURITY_GROUP_VAL: ${{ secrets.LAMBDA_SECURITY_GROUP_ID }}
         COGNITO_POOL_ID_VAL: ${{ secrets.COGNITO_USER_POOL_ID }}
         COGNITO_CLIENT_SECRET_VAL: ${{ secrets.COGNITO_USER_POOL_CLIENT_SECRET }}
         COGNITO_CLIENT_ID_VAL: ${{ secrets.COGNITO_USER_POOL_CLIENT_ID }}
@@ -88,6 +89,7 @@ jobs:
             "SubnetId1=${SUBNET_ID_1_VAL}" \
             "SubnetId2=${SUBNET_ID_2_VAL}" \
             "ApiGatewayVpcEndpointId=${API_GW_VPC_ENDPOINT_VAL}" \
+            "LambdaSecurityGroupId=${LAMBDA_SECURITY_GROUP_VAL}" \
             "CognitoUserPoolId=${COGNITO_POOL_ID_VAL}" \
             "CognitoUserPoolClientSecret=${COGNITO_CLIENT_SECRET_VAL}" \
             "CognitoUserPoolClientId=${COGNITO_CLIENT_ID_VAL}" \

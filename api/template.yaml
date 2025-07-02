@@ -41,6 +41,10 @@ Parameters:
     Type: String
     Description: VPC Endpoint ID for API Gateway private access
 
+  LambdaSecurityGroupId:
+    Type: String
+    Description: Security group ID for Lambda functions
+
   CognitoUserPoolId:
     Type: String
     Description: ID of the existing Cognito User Pool for authentication
@@ -765,14 +769,14 @@ Resources:
       # VpcConfig (needed for database access)
       VpcConfig:
         SecurityGroupIds:
-          - !Ref AmplifyAuthSecurityGroup
+          - !Ref LambdaSecurityGroupId
         SubnetIds:
           - !Ref SubnetId1
           - !Ref SubnetId2
       
       Policies:
         - AWSLambdaBasicExecutionRole
-        - AWSLambdaVPCAccessExecutionRole
+        - VPCAccessPolicy: {}
         - Statement:
             - Sid: CloudWatchLogsAccess
               Effect: Allow
