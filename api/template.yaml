@@ -772,7 +772,7 @@ Resources:
       
       Policies:
         - AWSLambdaBasicExecutionRole
-        - VPCAccessPolicy
+        - AWSLambdaVPCAccessExecutionRole
         - Statement:
             - Sid: CloudWatchLogsAccess
               Effect: Allow
