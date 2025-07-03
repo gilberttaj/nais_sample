@@ -4,10 +4,15 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import software.amazon.lambda.powertools.logging.Logging;
+import software.amazon.lambda.powertools.tracing.Tracing;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,11 +24,18 @@ import java.util.Map;
  */
 public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
+    private final ObjectMapper objectMapper;
+
+    public CustomerHandler() {
+        this.objectMapper = new ObjectMapper();
+    }
 
     @Override
+    @Logging
+    @Tracing
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
         try {
-            context.getLogger().log("Processing Customer API request: " + input.getHttpMethod() + " " + input.getPath());
+            logInfo("Processing Customer API request: " + input.getHttpMethod() + " " + input.getPath());
 
             // Handle CORS preflight
             if ("OPTIONS".equals(input.getHttpMethod())) {
@@ -31,7 +43,8 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             }
 
             // Validate authentication
-            if (!isAuthenticated(input, context)) {
+            if (!isAuthenticated(input)) {
+                logInfo("Authentication failed for request");
                 return createCorsResponse(401, "{\"error\":\"Unauthorized\",\"message\":\"Valid authentication token required\"}");
             }
 
@@ -40,17 +53,17 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
 
             // Route requests
             if (path.equals("/customer") && "GET".equals(method)) {
-                return handleGetAllCustomers(context);
+                return handleGetAllCustomers();
             } else if (path.startsWith("/customer/") && "GET".equals(method)) {
                 String customerCode = path.substring("/customer/".length());
-                return handleGetCustomerByCode(customerCode, context);
+                return handleGetCustomerByCode(customerCode);
             } else {
+                logInfo("Endpoint not found: " + method + " " + path);
                 return createCorsResponse(404, "{\"error\":\"Not Found\",\"message\":\"Endpoint not found\"}");
             }
 
         } catch (Exception e) {
-            context.getLogger().log("Error in CustomerHandler: " + e.getMessage());
-            e.printStackTrace();
+            logError("Error in CustomerHandler", e);
             return createCorsResponse(500, "{\"error\":\"Internal Server Error\",\"message\":\"" + e.getMessage() + "\"}");
         }
     }
@@ -58,11 +71,11 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
     /**
      * Validate authentication token
      */
-    private boolean isAuthenticated(APIGatewayProxyRequestEvent input, Context context) {
+    private boolean isAuthenticated(APIGatewayProxyRequestEvent input) {
         try {
             Map<String, String> headers = input.getHeaders();
             if (headers == null) {
-                context.getLogger().log("No headers present");
+                logInfo("No headers present");
                 return false;
             }
 
@@ -75,7 +88,7 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             }
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                context.getLogger().log("No valid Authorization header");
+                logInfo("No valid Authorization header");
                 return false;
             }
 
@@ -84,15 +97,15 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             // For local development, accept mock tokens
             String environment = System.getenv("AUTH_MODE");
             if ("MOCK".equalsIgnoreCase(environment)) {
-                context.getLogger().log("Mock mode: accepting token for local development");
+                logInfo("Mock mode: accepting token for local development");
                 return token.startsWith("eyJ") || token.contains("mock") || token.contains("dummy");
             }
 
             // For production, validate real Cognito tokens
-            return validateCognitoToken(token, context);
+            return validateCognitoToken(token);
 
         } catch (Exception e) {
-            context.getLogger().log("Authentication error: " + e.getMessage());
+            logError("Authentication error", e);
             return false;
         }
     }
@@ -100,12 +113,12 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
     /**
      * Validate Cognito JWT token (production)
      */
-    private boolean validateCognitoToken(String token, Context context) {
+    private boolean validateCognitoToken(String token) {
         try {
             // Simple JWT structure validation
             String[] parts = token.split("\\.");
             if (parts.length != 3) {
-                context.getLogger().log("Invalid JWT format");
+                logInfo("Invalid JWT format");
                 return false;
             }
 
@@ -115,11 +128,11 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             // 3. Validate token claims (audience, issuer, etc.)
             
             // For now, basic validation that it's a proper JWT
-            context.getLogger().log("Token validation passed (simplified)");
+            logInfo("Token validation passed (simplified)");
             return true;
 
         } catch (Exception e) {
-            context.getLogger().log("Token validation failed: " + e.getMessage());
+            logError("Token validation failed", e);
             return false;
         }
     }
@@ -127,21 +140,29 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
     /**
      * Get all customers
      */
-    private APIGatewayProxyResponseEvent handleGetAllCustomers(Context context) {
+    private APIGatewayProxyResponseEvent handleGetAllCustomers() {
         try {
-            context.getLogger().log("Fetching all customers");
+            logInfo("Fetching all customers");
             
             List<Map<String, Object>> customers = new ArrayList<>();
             
             try (Connection conn = getDatabaseConnection()) {
-                String sql = "SELECT customer_cd, customer_name FROM customer_mst ORDER BY customer_cd";
+                String sql = "SELECT office_cd, customer_cd, normal_name_kanji, chain_store_cd, chain_store_subcd, " +
+                            "created_by, created_at, updated_by, updated_at FROM customer_mst ORDER BY office_cd, customer_cd";
                 try (PreparedStatement stmt = conn.prepareStatement(sql);
                      ResultSet rs = stmt.executeQuery()) {
                     
                     while (rs.next()) {
                         Map<String, Object> customer = new HashMap<>();
+                        customer.put("office_cd", rs.getString("office_cd"));
                         customer.put("customer_cd", rs.getString("customer_cd"));
-                        customer.put("customer_name", rs.getString("customer_name"));
+                        customer.put("normal_name_kanji", rs.getString("normal_name_kanji"));
+                        customer.put("chain_store_cd", rs.getString("chain_store_cd"));
+                        customer.put("chain_store_subcd", rs.getString("chain_store_subcd"));
+                        customer.put("created_by", rs.getString("created_by"));
+                        customer.put("created_at", rs.getTimestamp("created_at"));
+                        customer.put("updated_by", rs.getString("updated_by"));
+                        customer.put("updated_at", rs.getTimestamp("updated_at"));
                         customers.add(customer);
                     }
                 }
@@ -152,10 +173,11 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             response.put("data", customers);
             response.put("count", customers.size());
 
+            logInfo("Successfully fetched " + customers.size() + " customers");
             return createCorsResponse(200, buildJsonResponse(response));
 
         } catch (Exception e) {
-            context.getLogger().log("Error fetching customers: " + e.getMessage());
+            logError("Error fetching customers", e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Database Error");
             errorResponse.put("message", e.getMessage());
@@ -169,40 +191,80 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
     }
 
     /**
-     * Get customer by code
+     * Get customer by code (expects office_cd-customer_cd format like "0001-0001")
      */
-    private APIGatewayProxyResponseEvent handleGetCustomerByCode(String customerCode, Context context) {
+    private APIGatewayProxyResponseEvent handleGetCustomerByCode(String customerCode) {
         try {
-            context.getLogger().log("Fetching customer with code: " + customerCode);
+            logInfo("Fetching customer with code: " + customerCode);
             
             if (customerCode == null || customerCode.trim().isEmpty()) {
                 return createCorsResponse(400, "{\"error\":\"Bad Request\",\"message\":\"Customer code is required\"}");
             }
 
+            // Parse office_cd and customer_cd from the code (format: office_cd-customer_cd)
+            String[] parts = customerCode.split("-");
+            String officeCd, custCd;
+            
+            if (parts.length == 2) {
+                // Format: "0001-0002"
+                officeCd = parts[0];
+                custCd = parts[1];
+            } else {
+                // Fallback: treat as customer_cd only, search all offices
+                officeCd = null;
+                custCd = customerCode;
+            }
+
             Map<String, Object> customer = null;
             
             try (Connection conn = getDatabaseConnection()) {
-                String sql = "SELECT customer_cd, customer_name FROM customer_mst WHERE customer_cd = ?";
+                String sql;
+                if (officeCd != null) {
+                    // Search by specific office_cd and customer_cd
+                    sql = "SELECT office_cd, customer_cd, normal_name_kanji, chain_store_cd, chain_store_subcd, " +
+                          "created_by, created_at, updated_by, updated_at FROM customer_mst " +
+                          "WHERE office_cd = ? AND customer_cd = ?";
+                } else {
+                    // Search by customer_cd only (first match)
+                    sql = "SELECT office_cd, customer_cd, normal_name_kanji, chain_store_cd, chain_store_subcd, " +
+                          "created_by, created_at, updated_by, updated_at FROM customer_mst " +
+                          "WHERE customer_cd = ? LIMIT 1";
+                }
+                
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, customerCode.toUpperCase());
+                    if (officeCd != null) {
+                        stmt.setString(1, officeCd.toUpperCase());
+                        stmt.setString(2, custCd.toUpperCase());
+                    } else {
+                        stmt.setString(1, custCd.toUpperCase());
+                    }
                     
                     try (ResultSet rs = stmt.executeQuery()) {
                         if (rs.next()) {
                             customer = new HashMap<>();
+                            customer.put("office_cd", rs.getString("office_cd"));
                             customer.put("customer_cd", rs.getString("customer_cd"));
-                            customer.put("customer_name", rs.getString("customer_name"));
+                            customer.put("normal_name_kanji", rs.getString("normal_name_kanji"));
+                            customer.put("chain_store_cd", rs.getString("chain_store_cd"));
+                            customer.put("chain_store_subcd", rs.getString("chain_store_subcd"));
+                            customer.put("created_by", rs.getString("created_by"));
+                            customer.put("created_at", rs.getTimestamp("created_at"));
+                            customer.put("updated_by", rs.getString("updated_by"));
+                            customer.put("updated_at", rs.getTimestamp("updated_at"));
                         }
                     }
                 }
             }
 
             if (customer == null) {
+                logInfo("Customer not found with code: " + customerCode);
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("error", "Not Found");
                 errorResponse.put("message", "Customer not found with code: " + customerCode);
                 return createCorsResponse(404, buildJsonResponse(errorResponse));
             }
 
+            logInfo("Successfully fetched customer with code: " + customerCode);
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("data", customer);
@@ -210,7 +272,7 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
             return createCorsResponse(200, buildJsonResponse(response));
 
         } catch (Exception e) {
-            context.getLogger().log("Error fetching customer: " + e.getMessage());
+            logError("Error fetching customer with code: " + customerCode, e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Database Error");
             errorResponse.put("message", e.getMessage());
@@ -232,26 +294,28 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
         String dbPassword = System.getenv("DB_PASSWORD");
         
         // Log environment variables for debugging (mask password)
-        System.out.println("DB_URL from env: " + dbUrl);
-        System.out.println("DB_USER from env: " + dbUser);
-        System.out.println("DB_PASSWORD from env: " + (dbPassword != null ? "***set***" : "null"));
+        logInfo("DB_URL from env: " + dbUrl);
+        logInfo("DB_USER from env: " + dbUser);
+        logInfo("DB_PASSWORD from env: " + (dbPassword != null ? "***set***" : "null"));
         
         // Default values for local development
         if (dbUrl == null) {
             dbUrl = "jdbc:postgresql://localhost:5432/nais";
-            System.out.println("Using default DB_URL: " + dbUrl);
+            logInfo("Using default DB_URL: " + dbUrl);
         }
         if (dbUser == null) {
             dbUser = "postgres";
-            System.out.println("Using default DB_USER: " + dbUser);
+            logInfo("Using default DB_USER: " + dbUser);
         }
         if (dbPassword == null) {
             dbPassword = "password";
-            System.out.println("Using default DB_PASSWORD");
+            logInfo("Using default DB_PASSWORD");
         }
 
-        System.out.println("Attempting to connect to: " + dbUrl + " with user: " + dbUser);
-        return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+        logInfo("Attempting to connect to database: " + dbUrl + " with user: " + dbUser);
+        Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+        logInfo("Successfully connected to database");
+        return conn;
     }
 
     /**
@@ -335,5 +399,31 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
         
         response.setBody(body);
         return response;
+    }
+
+    /**
+     * Structured logging methods using AWS Lambda Powertools format
+     */
+    private void logInfo(String message) {
+        System.out.println(createLogJson("INFO", message, null));
+    }
+
+    private void logError(String message, Exception e) {
+        System.out.println(createLogJson("ERROR", message, e));
+    }
+
+    private String createLogJson(String level, String message, Exception e) {
+        try {
+            Map<String, Object> logData = Map.of(
+                    "timestamp", LocalDateTime.now().toString(),
+                    "level", level,
+                    "message", message,
+                    "service", "customer-api",
+                    "error", e != null ? e.getMessage() : null
+            );
+            return objectMapper.writeValueAsString(logData);
+        } catch (Exception ex) {
+            return "{\"level\":\"" + level + "\",\"message\":\"" + message + "\",\"service\":\"customer-api\",\"error\":\"" + (e != null ? e.getMessage() : "") + "\"}";
+        }
     }
 }
