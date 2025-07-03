@@ -1119,6 +1119,15 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub 'customer-master-replacement-batch-${Stage}-${AWS::AccountId}'
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt CustomerMasterReplacementFunction.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .csv
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -1133,6 +1142,8 @@ Resources:
           Value: !Ref Stage
         - Key: Component
           Value: CustomerMasterReplacement
+    DependsOn:
+      - CustomerMasterReplacementLambdaPermission
 
   # ========================================
   # Customer Master Replacement Lambda Function
@@ -1211,22 +1222,6 @@ Resources:
       Principal: s3.amazonaws.com
       SourceArn: !Sub '${CustomerMasterReplacementBucket}'
 
-  # S3 bucket notification configuration
-  CustomerMasterReplacementBucketNotification:
-    Type: AWS::S3::BucketNotification
-    Properties:
-      Bucket: !Ref CustomerMasterReplacementBucket
-      LambdaConfigurations:
-        - Event: s3:ObjectCreated:*
-          Function: !GetAtt CustomerMasterReplacementFunction.Arn
-          Filter:
-            S3Key:
-              Rules:
-                - Name: suffix
-                  Value: .csv
-    DependsOn:
-      - CustomerMasterReplacementFunction
-      - CustomerMasterReplacementLambdaPermission
 
 Outputs:
   AmplifyAuthFunctionArn:

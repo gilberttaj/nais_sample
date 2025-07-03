@@ -1173,6 +1173,18 @@ Resources:
     Properties:
       BucketName:
         Fn::Sub: customer-master-replacement-batch-${Stage}-${AWS::AccountId}
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: s3:ObjectCreated:*
+          Function:
+            Fn::GetAtt:
+            - CustomerMasterReplacementFunction
+            - Arn
+          Filter:
+            S3Key:
+              Rules:
+              - Name: suffix
+                Value: .csv
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -1188,6 +1200,8 @@ Resources:
           Ref: Stage
       - Key: Component
         Value: CustomerMasterReplacement
+    DependsOn:
+    - CustomerMasterReplacementLambdaPermission
   CustomerMasterReplacementFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1270,25 +1284,6 @@ Resources:
       Principal: s3.amazonaws.com
       SourceArn:
         Fn::Sub: ${CustomerMasterReplacementBucket}
-  CustomerMasterReplacementBucketNotification:
-    Type: AWS::S3::BucketNotification
-    Properties:
-      Bucket:
-        Ref: CustomerMasterReplacementBucket
-      LambdaConfigurations:
-      - Event: s3:ObjectCreated:*
-        Function:
-          Fn::GetAtt:
-          - CustomerMasterReplacementFunction
-          - Arn
-        Filter:
-          S3Key:
-            Rules:
-            - Name: suffix
-              Value: .csv
-    DependsOn:
-    - CustomerMasterReplacementFunction
-    - CustomerMasterReplacementLambdaPermission
 Outputs:
   AmplifyAuthFunctionArn:
     Description: Amplify-like Authentication Lambda Function ARN with Workspace Validation
