@@ -1111,6 +1111,126 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/Nais-MailApiConfigAPI-${Stage}'
       RetentionInDays: !If [IsProduction, 30, 7]
 
+  # ========================================
+  # Customer Master Replacement S3 Bucket
+  # ========================================
+  
+  CustomerMasterReplacementBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'customer-master-replacement-batch-${Stage}-${AWS::AccountId}'
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt CustomerMasterReplacementFunction.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .csv
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Application
+          Value: Nais
+        - Key: Environment
+          Value: !Ref Stage
+        - Key: Component
+          Value: CustomerMasterReplacement
+
+  # ========================================
+  # Customer Master Replacement Lambda Function
+  # ========================================
+  
+  CustomerMasterReplacementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'Nais-CustomerMasterReplacement-${Stage}'
+      Description: !Sub 'Customer Master Data Replacement Batch Processing (${Stage})'
+      CodeUri: ./
+      Handler: com.nais.handlers.CustomerMasterReplacementHandler::handleRequest
+      Runtime: java11
+      MemorySize: !If [IsProduction, 2048, 1024]
+      Timeout: 900  # 15 minutes
+      
+      # VpcConfig (needed for database access)
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroupId
+        SubnetIds:
+          - !Ref SubnetId1
+          - !Ref SubnetId2
+      
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - VPCAccessPolicy: {}
+        - Statement:
+            - Sid: S3ReadAccess
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectVersion
+              Resource: !Sub '${CustomerMasterReplacementBucket}/*'
+            - Sid: CloudWatchLogsAccess
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+      
+      Environment:
+        Variables:
+          # Database Configuration
+          DB_URL: !Sub 'jdbc:postgresql://${DBHost}:${DBPort}/${DBName}'
+          DB_USER: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+          
+          # App Configuration
+          STAGE: !Ref Stage
+          POWERTOOLS_SERVICE_NAME: customer-master-replacement
+          POWERTOOLS_LOG_LEVEL: INFO
+          POWERTOOLS_LOGGER_LOG_EVENT: true
+          POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
+          LOG_LEVEL: INFO
+      
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref CustomerMasterReplacementBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .csv
+      
+      Tags:
+        Application: Nais
+        Environment: !Ref Stage
+        Component: CustomerMasterReplacement
+
+  CustomerMasterReplacementLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/Nais-CustomerMasterReplacement-${Stage}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  # Lambda permission for S3 to invoke the function
+  CustomerMasterReplacementLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CustomerMasterReplacementFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub '${CustomerMasterReplacementBucket}/*'
+
 Outputs:
   AmplifyAuthFunctionArn:
     Description: Amplify-like Authentication Lambda Function ARN with Workspace Validation
@@ -1178,3 +1298,39 @@ Outputs:
         - Email validation is enforced at the Google OAuth callback
         - Configuration is stored securely in AWS Secrets Manager
       - DomainsString: !Join [",", !Ref AllowedEmailDomains]
+
+  # Customer Master Replacement Outputs
+  CustomerMasterReplacementBucketName:
+    Description: S3 bucket name for customer master CSV uploads
+    Value: !Ref CustomerMasterReplacementBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CustomerMasterReplacementBucket'
+
+  CustomerMasterReplacementFunctionArn:
+    Description: Customer Master Replacement Lambda Function ARN
+    Value: !GetAtt CustomerMasterReplacementFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-CustomerMasterReplacementFunctionArn'
+
+  CustomerMasterReplacementInstructions:
+    Description: Instructions for using the Customer Master Replacement feature
+    Value: !Sub |
+      📄 Customer Master Replacement System Ready!
+      
+      📁 S3 Bucket: ${CustomerMasterReplacementBucket}
+      🔄 Lambda Function: ${CustomerMasterReplacementFunction}
+      
+      📋 Usage Instructions:
+      1. Upload CSV files to the S3 bucket: ${CustomerMasterReplacementBucket}
+      2. CSV files must have .csv extension
+      3. CSV format: office_cd,customer_cd,normal_name_kanji,chain_store_cd,chain_store_subcd
+      4. Lambda will automatically process uploaded files
+      5. Processing includes:
+         - Delete all existing customer master data
+         - Insert new data in batches of 10,000 rows
+         - Transaction rollback on any error
+      
+      📊 Monitoring:
+      - CloudWatch Logs: /aws/lambda/Nais-CustomerMasterReplacement-${Stage}
+      - Logs are in JSON format for easy parsing
+      - All processing steps are logged with timestamps

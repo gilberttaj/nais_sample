@@ -90,6 +90,38 @@
             <version>${aws.java.sdk.version}</version>
         </dependency>
 
+        <!-- AWS Lambda Powertools for Java -->
+        <dependency>
+            <groupId>software.amazon.lambda</groupId>
+            <artifactId>powertools-logging</artifactId>
+            <version>1.18.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <dependency>
+            <groupId>software.amazon.lambda</groupId>
+            <artifactId>powertools-tracing</artifactId>
+            <version>1.18.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- AWS S3 SDK -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws.java.sdk.version}</version>
+        </dependency>
+
         <!-- ========================================= -->
         <!-- Environment Variables & Configuration -->
         <!-- ========================================= -->
@@ -179,14 +211,6 @@
             <version>4.4.16</version>
         </dependency>
 
-        <!-- ========================================= -->
-        <!-- Database Dependencies -->
-        <!-- ========================================= -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.6.0</version>
-        </dependency>
 
         <!-- ========================================= -->
         <!-- Email Validation Dependencies -->

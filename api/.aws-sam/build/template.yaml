@@ -35,6 +35,9 @@ Parameters:
   ApiGatewayVpcEndpointId:
     Type: String
     Description: VPC Endpoint ID for API Gateway private access
+  LambdaSecurityGroupId:
+    Type: String
+    Description: Security group ID for Lambda functions
   CognitoUserPoolId:
     Type: String
     Description: ID of the existing Cognito User Pool for authentication
@@ -718,6 +721,170 @@ Resources:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerFunction.Arn}/invocations
         RequestParameters:
           integration.request.path.code: method.request.path.code
+  MailToChildResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Fn::GetAtt:
+        - NaisRestApi
+        - RootResourceId
+      PathPart: mail-to-child
+  MailToChildGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailToChildResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations
+  MailToChildGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailToChildResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations
+  MailToChildListIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Ref: MailToChildResource
+      PathPart: '{mailing_list_id}'
+  MailToChildListIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailToChildListIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+  MailToChildListIdGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailToChildListIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailToChildFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+  MailApiConfigResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Fn::GetAtt:
+        - NaisRestApi
+        - RootResourceId
+      PathPart: mail-api-config
+  MailApiConfigGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailApiConfigResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations
+  MailApiConfigGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailApiConfigResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations
+  MailApiConfigJobIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Ref: MailApiConfigResource
+      PathPart: '{job_id}'
+  MailApiConfigJobIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailApiConfigJobIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.job_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.job_id: method.request.path.job_id
+  MailApiConfigJobIdGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailApiConfigJobIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.job_id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.job_id: method.request.path.job_id
   AmplifyAuthLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -732,6 +899,24 @@ Resources:
     Properties:
       FunctionName:
         Ref: CustomerFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*
+  MailToChildLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: MailToChildFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*
+  MailApiConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: MailApiConfigFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn:
@@ -759,6 +944,14 @@ Resources:
     - CustomerGetOptionsMethod
     - CustomerCodeGetMethod
     - CustomerCodeGetOptionsMethod
+    - MailToChildGetMethod
+    - MailToChildGetOptionsMethod
+    - MailToChildListIdGetMethod
+    - MailToChildListIdGetOptionsMethod
+    - MailApiConfigGetMethod
+    - MailApiConfigGetOptionsMethod
+    - MailApiConfigJobIdGetMethod
+    - MailApiConfigJobIdGetOptionsMethod
     Properties:
       RestApiId:
         Ref: NaisRestApi
@@ -794,8 +987,15 @@ Resources:
         - IsProduction
         - 60
         - 30
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroupId
+        SubnetIds:
+        - Ref: SubnetId1
+        - Ref: SubnetId2
       Policies:
       - AWSLambdaBasicExecutionRole
+      - VPCAccessPolicy: {}
       - Statement:
         - Sid: CloudWatchLogsAccess
           Effect: Allow
@@ -834,6 +1034,266 @@ Resources:
         - IsProduction
         - 30
         - 7
+  MailToChildFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: Nais-MailToChildAPI-${Stage}
+      Description:
+        Fn::Sub: Mail To Child Master API for NAIS system (${Stage})
+      CodeUri: MailToChildFunction
+      Handler: com.nais.handlers.MailToChildHandler::handleRequest
+      Runtime: java11
+      MemorySize:
+        Fn::If:
+        - IsProduction
+        - 1024
+        - 512
+      Timeout:
+        Fn::If:
+        - IsProduction
+        - 60
+        - 30
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroupId
+        SubnetIds:
+        - Ref: SubnetId1
+        - Ref: SubnetId2
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - VPCAccessPolicy: {}
+      - Statement:
+        - Sid: CloudWatchLogsAccess
+          Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource:
+            Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+      Environment:
+        Variables:
+          DB_URL:
+            Fn::Sub: jdbc:postgresql://${DBHost}:${DBPort}/${DBName}
+          DB_USER:
+            Ref: DBUser
+          DB_PASSWORD:
+            Ref: DBPassword
+          AUTH_MODE: OAUTH
+          STAGE:
+            Ref: Stage
+          AUTH_LIBRARY_VERSION: 2.1.0
+      Tags:
+        Application: Nais
+        Environment:
+          Ref: Stage
+        Component: MailToChildAPI
+    Metadata:
+      SamResourceId: MailToChildFunction
+  MailToChildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/Nais-MailToChildAPI-${Stage}
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  MailApiConfigFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: Nais-MailApiConfigAPI-${Stage}
+      Description:
+        Fn::Sub: Mail API Config Master API for NAIS system (${Stage})
+      CodeUri: MailApiConfigFunction
+      Handler: com.nais.handlers.MailApiConfigHandler::handleRequest
+      Runtime: java11
+      MemorySize:
+        Fn::If:
+        - IsProduction
+        - 1024
+        - 512
+      Timeout:
+        Fn::If:
+        - IsProduction
+        - 60
+        - 30
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroupId
+        SubnetIds:
+        - Ref: SubnetId1
+        - Ref: SubnetId2
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - VPCAccessPolicy: {}
+      - Statement:
+        - Sid: CloudWatchLogsAccess
+          Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource:
+            Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+      Environment:
+        Variables:
+          DB_URL:
+            Fn::Sub: jdbc:postgresql://${DBHost}:${DBPort}/${DBName}
+          DB_USER:
+            Ref: DBUser
+          DB_PASSWORD:
+            Ref: DBPassword
+          AUTH_MODE: OAUTH
+          STAGE:
+            Ref: Stage
+          AUTH_LIBRARY_VERSION: 2.1.0
+      Tags:
+        Application: Nais
+        Environment:
+          Ref: Stage
+        Component: MailApiConfigAPI
+    Metadata:
+      SamResourceId: MailApiConfigFunction
+  MailApiConfigLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/Nais-MailApiConfigAPI-${Stage}
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  CustomerMasterReplacementBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: customer-master-replacement-batch-${Stage}-${AWS::AccountId}
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: s3:ObjectCreated:*
+          Function:
+            Fn::GetAtt:
+            - CustomerMasterReplacementFunction
+            - Arn
+          Filter:
+            S3Key:
+              Rules:
+              - Name: suffix
+                Value: .csv
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: Application
+        Value: Nais
+      - Key: Environment
+        Value:
+          Ref: Stage
+      - Key: Component
+        Value: CustomerMasterReplacement
+  CustomerMasterReplacementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: Nais-CustomerMasterReplacement-${Stage}
+      Description:
+        Fn::Sub: Customer Master Data Replacement Batch Processing (${Stage})
+      CodeUri: CustomerMasterReplacementFunction
+      Handler: com.nais.handlers.CustomerMasterReplacementHandler::handleRequest
+      Runtime: java11
+      MemorySize:
+        Fn::If:
+        - IsProduction
+        - 2048
+        - 1024
+      Timeout: 900
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroupId
+        SubnetIds:
+        - Ref: SubnetId1
+        - Ref: SubnetId2
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - VPCAccessPolicy: {}
+      - Statement:
+        - Sid: S3ReadAccess
+          Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:GetObjectVersion
+          Resource:
+            Fn::Sub: ${CustomerMasterReplacementBucket}/*
+        - Sid: CloudWatchLogsAccess
+          Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource:
+            Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+      Environment:
+        Variables:
+          DB_URL:
+            Fn::Sub: jdbc:postgresql://${DBHost}:${DBPort}/${DBName}
+          DB_USER:
+            Ref: DBUser
+          DB_PASSWORD:
+            Ref: DBPassword
+          STAGE:
+            Ref: Stage
+          POWERTOOLS_SERVICE_NAME: customer-master-replacement
+          POWERTOOLS_LOG_LEVEL: INFO
+          POWERTOOLS_LOGGER_LOG_EVENT: true
+          POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
+          LOG_LEVEL: INFO
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: CustomerMasterReplacementBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                - Name: suffix
+                  Value: .csv
+      Tags:
+        Application: Nais
+        Environment:
+          Ref: Stage
+        Component: CustomerMasterReplacement
+    Metadata:
+      SamResourceId: CustomerMasterReplacementFunction
+  CustomerMasterReplacementLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/Nais-CustomerMasterReplacement-${Stage}
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  CustomerMasterReplacementLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: CustomerMasterReplacementFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn:
+        Fn::Sub: ${CustomerMasterReplacementBucket}/*
 Outputs:
   AmplifyAuthFunctionArn:
     Description: Amplify-like Authentication Lambda Function ARN with Workspace Validation
@@ -908,3 +1368,33 @@ Outputs:
           Fn::Join:
           - ','
           - Ref: AllowedEmailDomains
+  CustomerMasterReplacementBucketName:
+    Description: S3 bucket name for customer master CSV uploads
+    Value:
+      Ref: CustomerMasterReplacementBucket
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-CustomerMasterReplacementBucket
+  CustomerMasterReplacementFunctionArn:
+    Description: Customer Master Replacement Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - CustomerMasterReplacementFunction
+      - Arn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-CustomerMasterReplacementFunctionArn
+  CustomerMasterReplacementInstructions:
+    Description: Instructions for using the Customer Master Replacement feature
+    Value:
+      Fn::Sub: "\U0001F4C4 Customer Master Replacement System Ready!\n\n\U0001F4C1\
+        \ S3 Bucket: ${CustomerMasterReplacementBucket}\n\U0001F504 Lambda Function:\
+        \ ${CustomerMasterReplacementFunction}\n\n\U0001F4CB Usage Instructions:\n\
+        1. Upload CSV files to the S3 bucket: ${CustomerMasterReplacementBucket}\n\
+        2. CSV files must have .csv extension\n3. CSV format: office_cd,customer_cd,normal_name_kanji,chain_store_cd,chain_store_subcd\n\
+        4. Lambda will automatically process uploaded files\n5. Processing includes:\n\
+        \   - Delete all existing customer master data\n   - Insert new data in batches\
+        \ of 10,000 rows\n   - Transaction rollback on any error\n\n\U0001F4CA Monitoring:\n\
+        - CloudWatch Logs: /aws/lambda/Nais-CustomerMasterReplacement-${Stage}\n-\
+        \ Logs are in JSON format for easy parsing\n- All processing steps are logged\
+        \ with timestamps"

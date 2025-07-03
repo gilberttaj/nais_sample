@@ -80,3 +80,7 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# csv
+sample_customer_master_300k.csv
+generate_300k_sample.py

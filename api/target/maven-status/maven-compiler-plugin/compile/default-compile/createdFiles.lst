@@ -6,6 +6,7 @@ com\nais\handlers\CustomerHandler.class
 com\nais\handlers\GoogleAuth.class
 com\nais\handlers\AuthUrlResult.class
 com\nais\auth\validators\EmailValidationResult.class
+com\nais\handlers\CustomerMasterReplacementHandler.class
 com\nais\handlers\GoogleUserInfo.class
 com\nais\handlers\ResponseHelper.class
 com\nais\auth\services\WorkspaceAuthService.class
@@ -14,6 +15,7 @@ com\nais\handlers\MailApiConfigHandler.class
 com\nais\handlers\TokenExchangeResult.class
 com\nais\handlers\AuthHandler$MockWorkspaceAuthService.class
 com\nais\handlers\AuthHandler$1.class
+com\nais\handlers\CustomerMasterReplacementHandler$CustomerMasterRecord.class
 com\nais\handlers\GoogleOAuthProxy.class
 com\nais\handlers\SignOutResult.class
 com\nais\handlers\CognitoAuth.class
