@@ -96,7 +96,10 @@ public class CustomerMasterReplacementHandler implements RequestHandler<S3Event,
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        logInfo("Attempting to connect to database: " + DB_URL);
+        Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        logInfo("Successfully connected to database");
+        return conn;
     }
 
     private BufferedReader getCsvReader(String bucketName, String objectKey) throws IOException {
@@ -119,12 +122,15 @@ public class CustomerMasterReplacementHandler implements RequestHandler<S3Event,
     }
 
     private void deleteAllCustomerMasterData(Connection connection) throws SQLException {
+        logInfo("Starting to delete all existing customer master data");
         String deleteQuery = "DELETE FROM customer_mst";
         
         try (Statement statement = connection.createStatement()) {
+            logInfo("Executing DELETE query: " + deleteQuery);
             int deletedRows = statement.executeUpdate(deleteQuery);
             logInfo("Deleted " + deletedRows + " existing customer master records");
         }
+        logInfo("Completed deletion of existing customer master data");
     }
 
     private void processCustomerData(Connection connection, BufferedReader reader) throws IOException, SQLException {
