@@ -1119,15 +1119,6 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub 'customer-master-replacement-batch-${Stage}-${AWS::AccountId}'
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: s3:ObjectCreated:*
-            Function: !GetAtt CustomerMasterReplacementFunction.Arn
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .csv
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -1221,15 +1212,6 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/Nais-CustomerMasterReplacement-${Stage}'
       RetentionInDays: !If [IsProduction, 30, 7]
-
-  # Lambda permission for S3 to invoke the function
-  CustomerMasterReplacementLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref CustomerMasterReplacementFunction
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !Sub '${CustomerMasterReplacementBucket}/*'
 
 Outputs:
   AmplifyAuthFunctionArn:
