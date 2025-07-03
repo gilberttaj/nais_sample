@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.tracing.Tracing;
 
@@ -35,7 +36,9 @@ public class CustomerMasterReplacementHandler implements RequestHandler<S3Event,
     private final ObjectMapper objectMapper;
 
     public CustomerMasterReplacementHandler() {
-        this.s3Client = S3Client.builder().build();
+        this.s3Client = S3Client.builder()
+                .httpClient(UrlConnectionHttpClient.builder().build())
+                .build();
         this.objectMapper = new ObjectMapper();
     }
 

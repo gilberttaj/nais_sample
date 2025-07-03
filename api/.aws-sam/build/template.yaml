@@ -1173,18 +1173,6 @@ Resources:
     Properties:
       BucketName:
         Fn::Sub: customer-master-replacement-batch-${Stage}-${AWS::AccountId}
-      NotificationConfiguration:
-        LambdaConfigurations:
-        - Event: s3:ObjectCreated:*
-          Function:
-            Fn::GetAtt:
-            - CustomerMasterReplacementFunction
-            - Arn
-          Filter:
-            S3Key:
-              Rules:
-              - Name: suffix
-                Value: .csv
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -1200,8 +1188,6 @@ Resources:
           Ref: Stage
       - Key: Component
         Value: CustomerMasterReplacement
-    DependsOn:
-    - CustomerMasterReplacementLambdaPermission
   CustomerMasterReplacementFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1234,7 +1220,7 @@ Resources:
           - s3:GetObject
           - s3:GetObjectVersion
           Resource:
-            Fn::Sub: ${CustomerMasterReplacementBucket}/*
+            Fn::Sub: arn:aws:s3:::${CustomerMasterReplacementBucket}/*
         - Sid: CloudWatchLogsAccess
           Effect: Allow
           Action:
@@ -1275,15 +1261,6 @@ Resources:
         - IsProduction
         - 30
         - 7
-  CustomerMasterReplacementLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName:
-        Ref: CustomerMasterReplacementFunction
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn:
-        Fn::Sub: ${CustomerMasterReplacementBucket}
 Outputs:
   AmplifyAuthFunctionArn:
     Description: Amplify-like Authentication Lambda Function ARN with Workspace Validation
@@ -1379,12 +1356,17 @@ Outputs:
     Value:
       Fn::Sub: "\U0001F4C4 Customer Master Replacement System Ready!\n\n\U0001F4C1\
         \ S3 Bucket: ${CustomerMasterReplacementBucket}\n\U0001F504 Lambda Function:\
-        \ ${CustomerMasterReplacementFunction}\n\n\U0001F4CB Usage Instructions:\n\
-        1. Upload CSV files to the S3 bucket: ${CustomerMasterReplacementBucket}\n\
+        \ ${CustomerMasterReplacementFunction}\n\n\u26A0\uFE0F  MANUAL SETUP REQUIRED:\n\
+        Configure S3 bucket notification to trigger Lambda function:\n1. Go to AWS\
+        \ S3 Console \u2192 ${CustomerMasterReplacementBucket}\n2. Go to Properties\
+        \ \u2192 Event notifications \u2192 Create event notification\n3. Event name:\
+        \ customer-master-csv-upload\n4. Event types: All object create events (s3:ObjectCreated:*)\n\
+        5. Filters: Suffix = .csv\n6. Destination: Lambda function \u2192 ${CustomerMasterReplacementFunction}\n\
+        \n\U0001F4CB Usage Instructions:\n1. Upload CSV files to the S3 bucket: ${CustomerMasterReplacementBucket}\n\
         2. CSV files must have .csv extension\n3. CSV format: office_cd,customer_cd,normal_name_kanji,chain_store_cd,chain_store_subcd\n\
-        4. Lambda will automatically process uploaded files\n5. Processing includes:\n\
-        \   - Delete all existing customer master data\n   - Insert new data in batches\
-        \ of 10,000 rows\n   - Transaction rollback on any error\n\n\U0001F4CA Monitoring:\n\
-        - CloudWatch Logs: /aws/lambda/Nais-CustomerMasterReplacement-${Stage}\n-\
-        \ Logs are in JSON format for easy parsing\n- All processing steps are logged\
+        4. Lambda will automatically process uploaded files (after manual setup above)\n\
+        5. Processing includes:\n   - Delete all existing customer master data\n \
+        \  - Insert new data in batches of 10,000 rows\n   - Transaction rollback\
+        \ on any error\n\n\U0001F4CA Monitoring:\n- CloudWatch Logs: /aws/lambda/Nais-CustomerMasterReplacement-${Stage}\n\
+        - Logs are in JSON format for easy parsing\n- All processing steps are logged\
         \ with timestamps"
