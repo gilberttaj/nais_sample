@@ -1190,17 +1190,6 @@ Resources:
           POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
           LOG_LEVEL: INFO
       
-      Events:
-        S3Event:
-          Type: S3
-          Properties:
-            Bucket: !Sub 'customer-master-replacement-batch-${Stage}-${AWS::AccountId}'
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .csv
       
       Tags:
         Application: Nais
@@ -1303,11 +1292,20 @@ Outputs:
       📁 S3 Bucket: ${CustomerMasterReplacementBucket}
       🔄 Lambda Function: ${CustomerMasterReplacementFunction}
       
+      ⚠️  MANUAL SETUP REQUIRED:
+      Configure S3 bucket notification to trigger Lambda function:
+      1. Go to AWS S3 Console → ${CustomerMasterReplacementBucket}
+      2. Go to Properties → Event notifications → Create event notification
+      3. Event name: customer-master-csv-upload
+      4. Event types: All object create events (s3:ObjectCreated:*)
+      5. Filters: Suffix = .csv
+      6. Destination: Lambda function → ${CustomerMasterReplacementFunction}
+      
       📋 Usage Instructions:
       1. Upload CSV files to the S3 bucket: ${CustomerMasterReplacementBucket}
       2. CSV files must have .csv extension
       3. CSV format: office_cd,customer_cd,normal_name_kanji,chain_store_cd,chain_store_subcd
-      4. Lambda will automatically process uploaded files
+      4. Lambda will automatically process uploaded files (after manual setup above)
       5. Processing includes:
          - Delete all existing customer master data
          - Insert new data in batches of 10,000 rows
