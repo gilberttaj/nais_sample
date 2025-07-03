@@ -1166,7 +1166,7 @@ Resources:
               Action:
                 - s3:GetObject
                 - s3:GetObjectVersion
-              Resource: !Sub '${CustomerMasterReplacementBucket}/*'
+              Resource: !Sub 'arn:aws:s3:::${CustomerMasterReplacementBucket}/*'
             - Sid: CloudWatchLogsAccess
               Effect: Allow
               Action:
