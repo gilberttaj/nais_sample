@@ -1190,17 +1190,6 @@ Resources:
           POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
           LOG_LEVEL: INFO
       
-      Events:
-        S3Event:
-          Type: S3
-          Properties:
-            Bucket: !Ref CustomerMasterReplacementBucket
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .csv
       
       Tags:
         Application: Nais
@@ -1212,6 +1201,32 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/Nais-CustomerMasterReplacement-${Stage}'
       RetentionInDays: !If [IsProduction, 30, 7]
+
+  # Lambda permission for S3 to invoke the function
+  CustomerMasterReplacementLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CustomerMasterReplacementFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub '${CustomerMasterReplacementBucket}'
+
+  # S3 bucket notification configuration
+  CustomerMasterReplacementBucketNotification:
+    Type: AWS::S3::BucketNotification
+    Properties:
+      Bucket: !Ref CustomerMasterReplacementBucket
+      LambdaConfigurations:
+        - Event: s3:ObjectCreated:*
+          Function: !GetAtt CustomerMasterReplacementFunction.Arn
+          Filter:
+            S3Key:
+              Rules:
+                - Name: suffix
+                  Value: .csv
+    DependsOn:
+      - CustomerMasterReplacementFunction
+      - CustomerMasterReplacementLambdaPermission
 
 Outputs:
   AmplifyAuthFunctionArn:
