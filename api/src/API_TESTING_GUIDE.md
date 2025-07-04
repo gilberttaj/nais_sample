@@ -231,7 +231,7 @@ curl -X POST "${API_BASE_URL}/mail-destination-parent" \
     "attachment_file_path": "/files/report_template.pdf", # Attachment template
     "mailing_list_id": "ML001",      # Associated mailing list
     "update_sys_div": "0",           # Access control: 0=no restrictions
-    "inputter_cd": "USER001"         # User who created this configuration
+    "importer_cd": "USER001"         # User who created this configuration
   }'
 
 # Business Impact:
@@ -278,7 +278,7 @@ curl -X PUT "${API_BASE_URL}/mail-destination-parent/JOB001|0001|0001|001|SUP001
     "attachment_file_path": "/files/v2/report_template.pdf", # New attachment
     "mailing_list_id": "ML002",            # Changed mailing list
     "update_sys_div": "0",                 # Maintained access level
-    "inputter_cd": "USER002"               # Updated by different user
+    "importer_cd": "USER002"               # Updated by different user
   }'
 
 # Business Impact:
@@ -373,7 +373,7 @@ curl -X POST "${API_BASE_URL}/mail-destination-child" \
     "serial_number": "001",          # Unique within this job (sequential)
     "email_address": "manager@customer.com", # Actual recipient email
     "update_sys_div": "0",           # Access control level
-    "inputter_cd": "USER001"         # User adding this recipient
+    "importer_cd": "USER001"         # User adding this recipient
   }'
 
 # Business Impact:
@@ -399,7 +399,7 @@ curl -X PUT "${API_BASE_URL}/mail-destination-child/JOB001|0001|0001|001|SUP001|
   -d '{
     "email_address": "updated@example.com",
     "update_sys_div": "MANUAL",
-    "inputter_cd": "USER002"
+    "importer_cd": "USER002"
   }'
 ```
 
@@ -576,7 +576,7 @@ curl -X POST "${API_BASE_URL}/mail-destination-parent" \
     "attachment_file_path": "/templates/sales_report_template.pdf",
     "mailing_list_id": "ML_MONTHLY_SALES",
     "update_sys_div": "0",
-    "inputter_cd": "ADMIN001"
+    "importer_cd": "ADMIN001"
   }'
 ```
 
@@ -597,7 +597,7 @@ curl -X POST "${API_BASE_URL}/mail-destination-child" \
     "serial_number": "001",
     "email_address": "manager@customer.com",
     "update_sys_div": "0",
-    "inputter_cd": "ADMIN001"
+    "importer_cd": "ADMIN001"
   }'
 
 # 7. Add second recipient
@@ -615,7 +615,7 @@ curl -X POST "${API_BASE_URL}/mail-destination-child" \
     "serial_number": "002",
     "email_address": "accounting@customer.com",
     "update_sys_div": "0",
-    "inputter_cd": "ADMIN001"
+    "importer_cd": "ADMIN001"
   }'
 ```
 
@@ -657,7 +657,7 @@ curl -X POST "${API_BASE_URL}/mail-destination-child" \
     "serial_number": "003",
     "email_address": "director@customer.com",
     "update_sys_div": "0",
-    "inputter_cd": "ADMIN001"
+    "importer_cd": "ADMIN001"
   }'
 
 # 13. Remove recipient if needed (soft delete)

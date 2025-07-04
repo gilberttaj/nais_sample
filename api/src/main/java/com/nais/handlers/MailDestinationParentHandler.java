@@ -98,7 +98,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                     "SELECT job_id, office_cd, customer_cd, chain_store_cd, supplier_cd, order_branch_cd, " +
                     "extend_cd, destination_name, send_mode, search_file, search_directory, send_directory, " +
                     "subject, body_file_path, attachment_file_path, mailing_list_id, update_sys_div, " +
-                    "inputter_cd, delete_flag, created_by, created_at, updated_by, updated_at " +
+                    "importer_cd, delete_flag, created_by, created_at, updated_by, updated_at " +
                     "FROM mail_destination_parent_mst WHERE 1=1"
                 );
 
@@ -176,7 +176,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                            "(job_id, office_cd, customer_cd, chain_store_cd, supplier_cd, order_branch_cd, " +
                            "extend_cd, destination_name, send_mode, search_file, search_directory, send_directory, " +
                            "subject, body_file_path, attachment_file_path, mailing_list_id, update_sys_div, " +
-                           "inputter_cd, delete_flag, created_by, created_at, updated_by, updated_at) " +
+                           "importer_cd, delete_flag, created_by, created_at, updated_by, updated_at) " +
                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -200,7 +200,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                     stmt.setString(15, (String) requestData.get("attachment_file_path"));
                     stmt.setString(16, (String) requestData.get("mailing_list_id"));
                     stmt.setString(17, (String) requestData.get("update_sys_div"));
-                    stmt.setString(18, (String) requestData.get("inputter_cd"));
+                    stmt.setString(18, (String) requestData.get("importer_cd"));
                     stmt.setString(19, (String) requestData.getOrDefault("delete_flag", "0"));
                     stmt.setString(20, currentUser);
                     stmt.setTimestamp(21, now);
@@ -261,7 +261,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                 String sql = "SELECT job_id, office_cd, customer_cd, chain_store_cd, supplier_cd, order_branch_cd, " +
                            "extend_cd, destination_name, send_mode, search_file, search_directory, send_directory, " +
                            "subject, body_file_path, attachment_file_path, mailing_list_id, update_sys_div, " +
-                           "inputter_cd, delete_flag, created_by, created_at, updated_by, updated_at " +
+                           "importer_cd, delete_flag, created_by, created_at, updated_by, updated_at " +
                            "FROM mail_destination_parent_mst " +
                            "WHERE job_id = ? AND office_cd = ? AND customer_cd = ? AND chain_store_cd = ? " +
                            "AND supplier_cd = ? AND order_branch_cd = ? AND extend_cd = ?";
@@ -332,7 +332,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                 String sql = "UPDATE mail_destination_parent_mst SET " +
                            "destination_name = ?, send_mode = ?, search_file = ?, search_directory = ?, " +
                            "send_directory = ?, subject = ?, body_file_path = ?, attachment_file_path = ?, " +
-                           "mailing_list_id = ?, update_sys_div = ?, inputter_cd = ?, delete_flag = ?, " +
+                           "mailing_list_id = ?, update_sys_div = ?, importer_cd = ?, delete_flag = ?, " +
                            "updated_by = ?, updated_at = ? " +
                            "WHERE job_id = ? AND office_cd = ? AND customer_cd = ? AND chain_store_cd = ? " +
                            "AND supplier_cd = ? AND order_branch_cd = ? AND extend_cd = ?";
@@ -351,7 +351,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                     stmt.setString(8, (String) requestData.get("attachment_file_path"));
                     stmt.setString(9, (String) requestData.get("mailing_list_id"));
                     stmt.setString(10, (String) requestData.get("update_sys_div"));
-                    stmt.setString(11, (String) requestData.get("inputter_cd"));
+                    stmt.setString(11, (String) requestData.get("importer_cd"));
                     stmt.setString(12, (String) requestData.getOrDefault("delete_flag", "0"));
                     stmt.setString(13, currentUser);
                     stmt.setTimestamp(14, now);
@@ -479,7 +479,7 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
         parent.put("attachment_file_path", rs.getString("attachment_file_path"));
         parent.put("mailing_list_id", rs.getString("mailing_list_id"));
         parent.put("update_sys_div", rs.getString("update_sys_div"));
-        parent.put("inputter_cd", rs.getString("inputter_cd"));
+        parent.put("importer_cd", rs.getString("importer_cd"));
         parent.put("delete_flag", rs.getString("delete_flag"));
         parent.put("created_by", rs.getString("created_by"));
         parent.put("created_at", rs.getTimestamp("created_at"));
@@ -503,16 +503,23 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
             if (authHeader == null) {
                 authHeader = headers.get("authorization");
             }
-            if (authHeader == null) {
-                authHeader = headers.get("X-Auth-Token");
+            
+            String xAuthToken = headers.get("X-Auth-Token");
+            if (xAuthToken == null) {
+                xAuthToken = headers.get("x-auth-token");
             }
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                logInfo("No valid Authorization header");
+            String token = null;
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring("Bearer ".length());
+            } else if (xAuthToken != null) {
+                token = xAuthToken;
+            }
+            
+            if (token == null) {
+                logInfo("No valid Authorization header or X-Auth-Token header");
                 return false;
             }
-
-            String token = authHeader.substring("Bearer ".length());
             
             String environment = System.getenv("AUTH_MODE");
             if ("MOCK".equalsIgnoreCase(environment)) {

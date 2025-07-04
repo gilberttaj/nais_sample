@@ -105,7 +105,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
             try (Connection conn = getDatabaseConnection()) {
                 StringBuilder sql = new StringBuilder(
                     "SELECT mailing_list_id, destination_seq, destination_address, destination_note, " +
-                    "status_div, inputter_cd, created_by, created_at, updated_by, updated_at " +
+                    "status_div, importer_cd, created_by, created_at, updated_by, updated_at " +
                     "FROM mail_destination_child_mst WHERE 1=1"
                 );
 
@@ -186,7 +186,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
 
                 String sql = "INSERT INTO mail_destination_child_mst " +
                            "(mailing_list_id, destination_seq, destination_address, destination_note, " +
-                           "status_div, inputter_cd, created_by, created_at, updated_by, updated_at) " +
+                           "status_div, importer_cd, created_by, created_at, updated_by, updated_at) " +
                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -198,7 +198,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
                     stmt.setString(3, destinationAddress);
                     stmt.setString(4, (String) requestData.get("destination_note"));
                     stmt.setString(5, statusDiv);
-                    stmt.setString(6, (String) requestData.get("inputter_cd"));
+                    stmt.setString(6, (String) requestData.get("importer_cd"));
                     stmt.setString(7, currentUser);
                     stmt.setTimestamp(8, now);
                     stmt.setString(9, currentUser);
@@ -260,7 +260,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
 
             try (Connection conn = getDatabaseConnection()) {
                 String sql = "SELECT mailing_list_id, destination_seq, destination_address, destination_note, " +
-                           "status_div, inputter_cd, created_by, created_at, updated_by, updated_at " +
+                           "status_div, importer_cd, created_by, created_at, updated_by, updated_at " +
                            "FROM mail_destination_child_mst " +
                            "WHERE mailing_list_id = ? AND destination_seq = ?";
 
@@ -341,7 +341,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
                            "destination_address = COALESCE(?, destination_address), " +
                            "destination_note = COALESCE(?, destination_note), " +
                            "status_div = COALESCE(?, status_div), " +
-                           "inputter_cd = COALESCE(?, inputter_cd), " +
+                           "importer_cd = COALESCE(?, importer_cd), " +
                            "updated_by = ?, updated_at = ? " +
                            "WHERE mailing_list_id = ? AND destination_seq = ?";
 
@@ -352,7 +352,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
                     stmt.setString(1, (String) requestData.get("destination_address"));
                     stmt.setString(2, (String) requestData.get("destination_note"));
                     stmt.setString(3, (String) requestData.get("status_div"));
-                    stmt.setString(4, (String) requestData.get("inputter_cd"));
+                    stmt.setString(4, (String) requestData.get("importer_cd"));
                     stmt.setString(5, currentUser);
                     stmt.setTimestamp(6, now);
                     stmt.setString(7, mailingListId);
@@ -506,7 +506,7 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
         child.put("destination_note", rs.getString("destination_note"));
         child.put("status_div", rs.getString("status_div"));
         child.put("status_description", getStatusDescription(rs.getString("status_div")));
-        child.put("inputter_cd", rs.getString("inputter_cd"));
+        child.put("importer_cd", rs.getString("importer_cd"));
         child.put("created_by", rs.getString("created_by"));
         child.put("created_at", rs.getTimestamp("created_at"));
         child.put("updated_by", rs.getString("updated_by"));
@@ -538,16 +538,23 @@ public class MailDestinationChildHandler implements RequestHandler<APIGatewayPro
             if (authHeader == null) {
                 authHeader = headers.get("authorization");
             }
-            if (authHeader == null) {
-                authHeader = headers.get("X-Auth-Token");
+            
+            String xAuthToken = headers.get("X-Auth-Token");
+            if (xAuthToken == null) {
+                xAuthToken = headers.get("x-auth-token");
             }
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                logInfo("No valid Authorization header");
+            String token = null;
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring("Bearer ".length());
+            } else if (xAuthToken != null) {
+                token = xAuthToken;
+            }
+            
+            if (token == null) {
+                logInfo("No valid Authorization header or X-Auth-Token header");
                 return false;
             }
-
-            String token = authHeader.substring("Bearer ".length());
             
             String environment = System.getenv("AUTH_MODE");
             if ("MOCK".equalsIgnoreCase(environment)) {
