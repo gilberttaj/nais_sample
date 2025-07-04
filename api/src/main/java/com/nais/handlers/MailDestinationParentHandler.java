@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.tracing.Tracing;
 
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -249,10 +250,17 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
             }
 
             // Parse composite key: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd
-            String[] keyParts = compositeKey.split("\\|");
+            // Handle potential trailing spaces in extend_cd field (CHAR(10) type)
+            String[] keyParts = compositeKey.split("\\|", -1); // -1 to preserve empty trailing parts
             if (keyParts.length != 7) {
+                logError("Invalid composite key format. Expected 7 parts, got " + keyParts.length + ". Key: [" + compositeKey + "]", null);
                 return createErrorResponse(400, "Bad Request", 
-                    "Invalid composite key format. Expected: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd");
+                    "Invalid composite key format. Expected: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd. Got " + keyParts.length + " parts.");
+            }
+            
+            // Log all parts for debugging
+            for (int i = 0; i < keyParts.length; i++) {
+                logInfo("Key part " + i + ": [" + keyParts[i] + "] (length: " + keyParts[i].length() + ")");
             }
 
             Map<String, Object> parent = null;
@@ -312,10 +320,17 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                 return createErrorResponse(400, "Bad Request", "Request body is required");
             }
 
-            String[] keyParts = compositeKey.split("\\|");
+            // Parse composite key with proper handling for trailing spaces
+            String[] keyParts = compositeKey.split("\\|", -1); // -1 to preserve empty trailing parts
             if (keyParts.length != 7) {
+                logError("Invalid composite key format in UPDATE. Expected 7 parts, got " + keyParts.length + ". Key: [" + compositeKey + "]", null);
                 return createErrorResponse(400, "Bad Request", 
-                    "Invalid composite key format. Expected: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd");
+                    "Invalid composite key format. Expected: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd. Got " + keyParts.length + " parts.");
+            }
+            
+            // Log all parts for debugging UPDATE operation
+            for (int i = 0; i < keyParts.length; i++) {
+                logInfo("UPDATE Key part " + i + ": [" + keyParts[i] + "] (length: " + keyParts[i].length() + ")");
             }
 
             // Check access control before update
@@ -395,10 +410,17 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
                 return createErrorResponse(400, "Bad Request", "Composite key is required");
             }
 
-            String[] keyParts = compositeKey.split("\\|");
+            // Parse composite key with proper handling for trailing spaces
+            String[] keyParts = compositeKey.split("\\|", -1); // -1 to preserve empty trailing parts
             if (keyParts.length != 7) {
+                logError("Invalid composite key format in DELETE. Expected 7 parts, got " + keyParts.length + ". Key: [" + compositeKey + "]", null);
                 return createErrorResponse(400, "Bad Request", 
-                    "Invalid composite key format. Expected: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd");
+                    "Invalid composite key format. Expected: job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd. Got " + keyParts.length + " parts.");
+            }
+            
+            // Log all parts for debugging DELETE operation
+            for (int i = 0; i < keyParts.length; i++) {
+                logInfo("DELETE Key part " + i + ": [" + keyParts[i] + "] (length: " + keyParts[i].length() + ")");
             }
 
             // Check access control before delete
@@ -455,7 +477,17 @@ public class MailDestinationParentHandler implements RequestHandler<APIGatewayPr
      */
     private String extractCompositeKey(Map<String, String> pathParameters) {
         if (pathParameters != null && pathParameters.containsKey("key")) {
-            return pathParameters.get("key");
+            String key = pathParameters.get("key");
+            // URL decode the key to handle encoded characters properly
+            if (key != null) {
+                try {
+                    key = java.net.URLDecoder.decode(key, "UTF-8");
+                    logInfo("Extracted and decoded composite key: [" + key + "]");
+                } catch (Exception e) {
+                    logError("Error decoding composite key: " + key, e);
+                }
+            }
+            return key;
         }
         return null;
     }

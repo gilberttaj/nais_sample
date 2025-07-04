@@ -797,6 +797,313 @@ All APIs return JSON responses in this format:
 - `customer_cd` - Filter by customer code
 - `delete_flag` - Filter by deletion status (0=active, 1=deleted)
 
+## Practical CRUD Examples with Real Data
+
+This section provides complete, ready-to-use curl examples based on actual database records for comprehensive testing of all CRUD operations.
+
+### Mail Destination Parent CRUD Examples
+
+#### Create New Parent Record
+**Based on existing customer data (OFC3/CUST)**
+```bash
+# Create new quarterly report job
+curl -k -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-parent" \
+  -d '{
+    "job_id": "JOB004",
+    "office_cd": "OFC3",
+    "customer_cd": "CUST",
+    "chain_store_cd": "CHNR",
+    "supplier_cd": "SUPP",
+    "order_branch_cd": "03",
+    "extend_cd": "EXT004    ",
+    "destination_name": "Quarterly Report",
+    "send_mode": "AUTO",
+    "search_file": "*.docx",
+    "search_directory": "/data/quarterly/",
+    "send_directory": "/data/send/",
+    "subject": "Quarterly Business Report - %DATE%",
+    "body_file_path": "/templates/quarterly_report.html",
+    "attachment_file_path": "/attachments/quarterly_%DATE%.docx",
+    "mailing_list_id": "ML004",
+    "update_sys_div": "1",
+    "importer_cd": "IMP03",
+    "delete_flag": "0"
+  }'
+```
+
+#### Update Existing Parent Record
+**Update JOB001 with new configuration**
+```bash
+# Update existing daily sales report job
+# Composite key: JOB001|OFC1|CUST|CHNR|SUPP|01|EXT001    
+# Note: The handler now properly handles URL decoding and trailing spaces
+curl -k -X PUT \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-parent/JOB001%7COFC1%7CCUST%7CCHNR%7CSUPP%7C01%7CEXT001%20%20%20%20" \
+  -d '{
+    "destination_name": "Updated Daily Sales Report",
+    "send_mode": "MANU",
+    "search_file": "*.xlsx",
+    "search_directory": "/data/reports/updated/",
+    "send_directory": "/data/send/updated/",
+    "subject": "Updated Daily Sales Report - %DATE%",
+    "body_file_path": "/templates/updated_daily_report.html",
+    "attachment_file_path": "/attachments/updated_sales_%DATE%.xlsx",
+    "mailing_list_id": "ML001",
+    "update_sys_div": "0",
+    "importer_cd": "IMP01",
+    "delete_flag": "0"
+  }'
+
+# Alternative format using pipe characters (also works with improved parsing):
+curl -k -X PUT \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-parent/JOB001|OFC1|CUST|CHNR|SUPP|01|EXT001    " \
+  -d '{
+    "destination_name": "Updated Daily Sales Report v2",
+    "send_mode": "AUTO",
+    "update_sys_div": "0",
+    "importer_cd": "IMP01"
+  }'
+```
+
+#### Delete Parent Record (Soft Delete)
+**Soft delete JOB002 (sets delete_flag=1)**
+```bash
+# Soft delete weekly summary job
+# Composite key: JOB002|OFC2|CUST|CHNR|SUPP|02|EXT002    
+curl -k -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-parent/JOB002%7COFC2%7CCUST%7CCHNR%7CSUPP%7C02%7CEXT002%20%20%20%20"
+```
+
+### Mail Destination Child CRUD Examples
+
+#### Create New Child Records
+**Add recipients to ML004 mailing list**
+```bash
+# Create first recipient for quarterly reports
+curl -k -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-child" \
+  -d '{
+    "mailing_list_id": "ML004",
+    "destination_seq": 1,
+    "destination_address": "executive@company.com",
+    "destination_note": "Executive Team",
+    "status_div": "1",
+    "importer_cd": "IMP03"
+  }'
+
+# Create second recipient for quarterly reports
+curl -k -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-child" \
+  -d '{
+    "mailing_list_id": "ML004",
+    "destination_seq": 2,
+    "destination_address": "finance@company.com",
+    "destination_note": "Finance Team",
+    "status_div": "1",
+    "importer_cd": "IMP03"
+  }'
+
+# Create third recipient for quarterly reports
+curl -k -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-child" \
+  -d '{
+    "mailing_list_id": "ML004",
+    "destination_seq": 3,
+    "destination_address": "audit@company.com",
+    "destination_note": "Audit Department",
+    "status_div": "1", 
+    "importer_cd": "IMP03"
+  }'
+```
+
+#### Update Existing Child Record
+**Update email address for ML001 recipient**
+```bash
+# Update sales manager email address
+# Composite key: ML001|1
+curl -k -X PUT \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-child/ML001%7C1" \
+  -d '{
+    "destination_address": "updated.manager@company.com",
+    "destination_note": "Updated Sales Manager",
+    "status_div": "1",
+    "importer_cd": "IMP01"
+  }'
+```
+
+#### Delete Child Record (Soft Delete)
+**Soft delete ML002 recipient (sets status_div=2)**
+```bash
+# Soft delete CFO from weekly summary list
+# Composite key: ML002|2
+curl -k -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-child/ML002%7C2"
+```
+
+### Complete Workflow: Setting Up New Email Campaign
+
+**Step 1: Verify customer exists**
+```bash
+# Check if customer OFC3/CUST exists
+curl -X GET "${API_BASE_URL}/customer/OFC3-CUST" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}"
+```
+
+**Step 2: Create parent job configuration**
+```bash
+# Create the parent record (use the CREATE example above)
+curl -k -X POST "${API_BASE_URL}/mail-destination-parent" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  -d '{ ... }' # (Full payload from CREATE example)
+```
+
+**Step 3: Add recipients to mailing list**
+```bash
+# Add recipients (use the child CREATE examples above)
+# Execute all three POST requests for ML004
+```
+
+**Step 4: Verify configuration**
+```bash
+# Check parent record was created
+curl -X GET "${API_BASE_URL}/mail-destination-parent/JOB004%7COFC3%7CCUST%7CCHNR%7CSUPP%7C03%7CEXT004%20%20%20%20" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}"
+
+# Check child records were created
+curl -X GET "${API_BASE_URL}/mail-destination-child?mailing_list_id=ML004" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}"
+```
+
+### Key Points for Testing
+
+**URL Encoding:**
+- Pipe characters `|` → `%7C`
+- Spaces in extend_cd → `%20`
+
+**Composite Keys:**
+- **Parent**: `job_id|office_cd|customer_cd|chain_store_cd|supplier_cd|order_branch_cd|extend_cd`
+- **Child**: `mailing_list_id|destination_seq`
+
+**Status Values:**
+- **Parent delete_flag**: `0`=active, `1`=deleted
+- **Child status_div**: `0`=inactive, `1`=active, `2`=deleted
+
+**Access Control:**
+- `update_sys_div=1` means only other system integration can modify
+- Check `update_sys_div` value before attempting updates/deletes
+
+**Data References:**
+- Child records must reference existing parent `mailing_list_id`
+- Parent records must reference existing customer codes
+
+## Troubleshooting Common Issues
+
+### Composite Key Format Errors
+
+**Problem**: "Invalid composite key format" error when calling UPDATE/DELETE operations
+
+**Root Cause**: The extend_cd field is defined as CHAR(10) in the database, which means it's padded with trailing spaces. URL encoding and parsing issues can cause the composite key to be incorrectly formatted.
+
+**Solution**: The Java handlers have been updated to properly handle:
+1. **URL Decoding**: Automatically decode URL-encoded characters (`%7C` → `|`, `%20` → space)
+2. **Trailing Spaces**: Use `split("\\|", -1)` to preserve empty parts and trailing spaces
+3. **Enhanced Logging**: Log all key parts with lengths for debugging
+
+**Working Examples**:
+```bash
+# Both formats now work correctly:
+
+# Format 1: URL encoded (recommended for production)
+curl -X PUT "${API_BASE_URL}/mail-destination-parent/JOB001%7COFC1%7CCUST%7CCHNR%7CSUPP%7C01%7CEXT001%20%20%20%20"
+
+# Format 2: Raw format (works in most terminals)
+curl -X PUT "${API_BASE_URL}/mail-destination-parent/JOB001|OFC1|CUST|CHNR|SUPP|01|EXT001    "
+```
+
+### Access Control Errors
+
+**Problem**: "Update operation not allowed for update_sys_div: 1" error
+
+**Root Cause**: Records with `update_sys_div=1` can only be modified by specific system types.
+
+**Solution**: 
+1. Create test records with `update_sys_div=0` (no restrictions)
+2. Set appropriate `CALLING_SYSTEM` environment variable if needed
+3. Check the current `update_sys_div` value before attempting updates
+
+### Database Connection Issues
+
+**Problem**: "column 'inputter_cd' does not exist" error
+
+**Root Cause**: Code was using incorrect column name.
+
+**Solution**: All handlers have been updated to use `importer_cd` instead of `inputter_cd`.
+
+### Testing the Composite Key Fix
+
+**Verify the fix works by testing UPDATE operation**:
+```bash
+# Step 1: Create a test record with update_sys_div=0 (no restrictions)
+curl -k -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-parent" \
+  -d '{
+    "job_id": "TEST001",
+    "office_cd": "OFC1",
+    "customer_cd": "CUST",
+    "chain_store_cd": "CHNR",
+    "supplier_cd": "SUPP",
+    "order_branch_cd": "01",
+    "extend_cd": "TESTKEY   ",
+    "destination_name": "Test Record",
+    "send_mode": "AUTO",
+    "search_file": "*.pdf",
+    "search_directory": "/test/",
+    "send_directory": "/test/out/",
+    "subject": "Test Subject",
+    "body_file_path": "/test/body.txt",
+    "attachment_file_path": "/test/attach.pdf",
+    "mailing_list_id": "ML001",
+    "update_sys_div": "0",
+    "importer_cd": "TEST"
+  }'
+
+# Step 2: Test UPDATE with the composite key (should now work)
+curl -k -X PUT \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: ${AUTH_TOKEN}" \
+  "${API_BASE_URL}/mail-destination-parent/TEST001|OFC1|CUST|CHNR|SUPP|01|TESTKEY   " \
+  -d '{
+    "destination_name": "Updated Test Record",
+    "send_mode": "MANU",
+    "update_sys_div": "0",
+    "importer_cd": "TEST_UPD"
+  }'
+
+# Expected: 200 OK with success message (no more "Invalid composite key format" error)
+```
+
 ## Batch Testing Script
 
 Create a bash script to test multiple endpoints:
