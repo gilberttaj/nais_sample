@@ -885,6 +885,286 @@ Resources:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailApiConfigFunction.Arn}/invocations
         RequestParameters:
           integration.request.path.job_id: method.request.path.job_id
+  MailDestinationParentResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Fn::GetAtt:
+        - NaisRestApi
+        - RootResourceId
+      PathPart: mail-destination-parent
+  MailDestinationParentGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+  MailDestinationParentPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+  MailDestinationParentGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+  MailDestinationParentKeyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Ref: MailDestinationParentResource
+      PathPart: '{key}'
+  MailDestinationParentKeyGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentKeyResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.key: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.key: method.request.path.key
+  MailDestinationParentKeyPutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentKeyResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.key: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.key: method.request.path.key
+  MailDestinationParentKeyDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentKeyResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.key: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.key: method.request.path.key
+  MailDestinationParentKeyOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationParentKeyResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.key: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationParentFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.key: method.request.path.key
+  MailDestinationChildResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Fn::GetAtt:
+        - NaisRestApi
+        - RootResourceId
+      PathPart: mail-destination-child
+  MailDestinationChildGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+  MailDestinationChildPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+  MailDestinationChildGetOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+  MailDestinationChildListIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Ref: MailDestinationChildResource
+      PathPart: '{mailing_list_id}'
+  MailDestinationChildSeqResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ParentId:
+        Ref: MailDestinationChildListIdResource
+      PathPart: '{destination_seq}'
+  MailDestinationChildSeqGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildSeqResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+        method.request.path.destination_seq: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+          integration.request.path.destination_seq: method.request.path.destination_seq
+  MailDestinationChildSeqPutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildSeqResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+        method.request.path.destination_seq: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+          integration.request.path.destination_seq: method.request.path.destination_seq
+  MailDestinationChildSeqDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildSeqResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+        method.request.path.destination_seq: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+          integration.request.path.destination_seq: method.request.path.destination_seq
+  MailDestinationChildSeqOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: NaisRestApi
+      ResourceId:
+        Ref: MailDestinationChildSeqResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.mailing_list_id: true
+        method.request.path.destination_seq: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MailDestinationChildFunction.Arn}/invocations
+        RequestParameters:
+          integration.request.path.mailing_list_id: method.request.path.mailing_list_id
+          integration.request.path.destination_seq: method.request.path.destination_seq
   AmplifyAuthLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -921,6 +1201,24 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn:
         Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*
+  MailDestinationParentLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: MailDestinationParentFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*
+  MailDestinationChildLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: MailDestinationChildFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NaisRestApi}/*/*/*
   AmplifyApiDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
@@ -952,6 +1250,20 @@ Resources:
     - MailApiConfigGetOptionsMethod
     - MailApiConfigJobIdGetMethod
     - MailApiConfigJobIdGetOptionsMethod
+    - MailDestinationParentGetMethod
+    - MailDestinationParentPostMethod
+    - MailDestinationParentGetOptionsMethod
+    - MailDestinationParentKeyGetMethod
+    - MailDestinationParentKeyPutMethod
+    - MailDestinationParentKeyDeleteMethod
+    - MailDestinationParentKeyOptionsMethod
+    - MailDestinationChildGetMethod
+    - MailDestinationChildPostMethod
+    - MailDestinationChildGetOptionsMethod
+    - MailDestinationChildSeqGetMethod
+    - MailDestinationChildSeqPutMethod
+    - MailDestinationChildSeqDeleteMethod
+    - MailDestinationChildSeqOptionsMethod
     Properties:
       RestApiId:
         Ref: NaisRestApi
@@ -1256,6 +1568,148 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/Nais-CustomerMasterReplacement-${Stage}
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  MailDestinationParentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: Nais-MailDestinationParentAPI-${Stage}
+      Description:
+        Fn::Sub: Mail Destination Parent Master API for NAIS system (${Stage})
+      CodeUri: MailDestinationParentFunction
+      Handler: com.nais.handlers.MailDestinationParentHandler::handleRequest
+      Runtime: java11
+      MemorySize:
+        Fn::If:
+        - IsProduction
+        - 1024
+        - 512
+      Timeout:
+        Fn::If:
+        - IsProduction
+        - 60
+        - 30
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroupId
+        SubnetIds:
+        - Ref: SubnetId1
+        - Ref: SubnetId2
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - VPCAccessPolicy: {}
+      - Statement:
+        - Sid: CloudWatchLogsAccess
+          Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource:
+            Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+      Environment:
+        Variables:
+          DB_URL:
+            Fn::Sub: jdbc:postgresql://${DBHost}:${DBPort}/${DBName}
+          DB_USER:
+            Ref: DBUser
+          DB_PASSWORD:
+            Ref: DBPassword
+          AUTH_MODE: OAUTH
+          STAGE:
+            Ref: Stage
+          POWERTOOLS_SERVICE_NAME: mail-destination-parent-api
+          POWERTOOLS_LOG_LEVEL: INFO
+          POWERTOOLS_LOGGER_LOG_EVENT: true
+          POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
+          LOG_LEVEL: INFO
+      Tags:
+        Application: Nais
+        Environment:
+          Ref: Stage
+        Component: MailDestinationParentAPI
+    Metadata:
+      SamResourceId: MailDestinationParentFunction
+  MailDestinationParentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/Nais-MailDestinationParentAPI-${Stage}
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  MailDestinationChildFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: Nais-MailDestinationChildAPI-${Stage}
+      Description:
+        Fn::Sub: Mail Destination Child Master API for NAIS system (${Stage})
+      CodeUri: MailDestinationChildFunction
+      Handler: com.nais.handlers.MailDestinationChildHandler::handleRequest
+      Runtime: java11
+      MemorySize:
+        Fn::If:
+        - IsProduction
+        - 1024
+        - 512
+      Timeout:
+        Fn::If:
+        - IsProduction
+        - 60
+        - 30
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroupId
+        SubnetIds:
+        - Ref: SubnetId1
+        - Ref: SubnetId2
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - VPCAccessPolicy: {}
+      - Statement:
+        - Sid: CloudWatchLogsAccess
+          Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource:
+            Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+      Environment:
+        Variables:
+          DB_URL:
+            Fn::Sub: jdbc:postgresql://${DBHost}:${DBPort}/${DBName}
+          DB_USER:
+            Ref: DBUser
+          DB_PASSWORD:
+            Ref: DBPassword
+          AUTH_MODE: OAUTH
+          STAGE:
+            Ref: Stage
+          POWERTOOLS_SERVICE_NAME: mail-destination-child-api
+          POWERTOOLS_LOG_LEVEL: INFO
+          POWERTOOLS_LOGGER_LOG_EVENT: true
+          POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
+          LOG_LEVEL: INFO
+      Tags:
+        Application: Nais
+        Environment:
+          Ref: Stage
+        Component: MailDestinationChildAPI
+    Metadata:
+      SamResourceId: MailDestinationChildFunction
+  MailDestinationChildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/Nais-MailDestinationChildAPI-${Stage}
       RetentionInDays:
         Fn::If:
         - IsProduction
