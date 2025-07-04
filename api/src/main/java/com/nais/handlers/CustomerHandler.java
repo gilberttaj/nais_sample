@@ -81,18 +81,25 @@ public class CustomerHandler implements RequestHandler<APIGatewayProxyRequestEve
 
             String authHeader = headers.get("Authorization");
             if (authHeader == null) {
-                authHeader = headers.get("authorization"); // case-insensitive
+                authHeader = headers.get("authorization");
             }
-            if (authHeader == null) {
-                authHeader = headers.get("X-Auth-Token"); // fallback for API Gateway issues
+            
+            String xAuthToken = headers.get("X-Auth-Token");
+            if (xAuthToken == null) {
+                xAuthToken = headers.get("x-auth-token");
             }
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                logInfo("No valid Authorization header");
+            String token = null;
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring("Bearer ".length());
+            } else if (xAuthToken != null) {
+                token = xAuthToken;
+            }
+            
+            if (token == null) {
+                logInfo("No valid Authorization header or X-Auth-Token header");
                 return false;
             }
-
-            String token = authHeader.substring("Bearer ".length());
             
             // For local development, accept mock tokens
             String environment = System.getenv("AUTH_MODE");
